@@ -1,6 +1,8 @@
 const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const { getChatGPTResponse } = require('../config/openaiClient.js'); 
+const { convertPrice } = require('../utils/converPrice.js')
 const Item = require('../models/item.js')
+
 
 async function handleOrder(user, phoneNumber, Body) {
     const modifyPrompt = `
@@ -36,14 +38,20 @@ async function handleOrder(user, phoneNumber, Body) {
         const itemName = matches[1].trim().toLowerCase();
         const quantity = parseInt(matches[2]); 
                 
-        const item = await Item.findOne({ name: { $regex: new RegExp('^' + itemName + '$', 'i') } });
-        if (item) {
-            const itemTotal = item.price * quantity;
-            itemDetails.push(`Cant: ${quantity}, ${item.name}: $${item.price.toFixed(2)} c/u, Total: $${itemTotal.toFixed(2)}`);
-            total += itemTotal; // Sumar el total de los productos
-            order.push({ name: item.name, quantity, price: item.price });
-        } else {
-            itemDetails.push(`${itemName}: No disponible`);
+        try {
+            const item = await Item.findOne({ product_name: { $regex: new RegExp('^' + itemName + '$', 'i') } });
+            if (!item) {
+                itemDetails.push(`${itemName}: No disponible`);
+                continue;
+            }
+
+            const itemPrice = convertPrice(item.price);
+            const itemTotal = itemPrice * quantity;
+            itemDetails.push(`Cant: ${quantity}, ${item.product_name}: $${itemPrice.toFixed(2)} c/u, Total: $${itemTotal.toFixed(2)}`);
+            total += itemTotal;
+            order.push({ name: item.product_name, quantity, price: itemPrice });
+        } catch (error) {
+            itemDetails.push(`${itemName}: Error al procesar el producto`);
         }
     }
                 
@@ -74,5 +82,6 @@ async function handleOrder(user, phoneNumber, Body) {
         to: phoneNumber
     });
 }
+
 
 module.exports = handleOrder;
