@@ -2,6 +2,7 @@ const express = require('express');
 const handleOrder = require('../controllers/handleOrder');
 const handleConfirmOrModify = require('../controllers/handleConfirmOrModify');
 const handleModifying = require('../controllers/handleModifying');
+const welcomeFLow = require('../controllers/handlerWelcome.js')
 //const createPaymentLink = require('../controllers/handleLinkPayment.js');
 const handleDeliveryDetails = require('../controllers/handleDeliberyDetails.js');
 
@@ -20,12 +21,15 @@ router.post('/', async (req, res) => {
         let user = await User.findOne({ phoneNumber });
 
         if (!user) {
-            user = new User({ phoneNumber, conversation: [], stage: 'order' });
+            user = new User({ phoneNumber, conversation: [], stage: 'welcome' });
             await user.save();
         }
 
         user.conversation.push({ message: Body, direction: 'incoming' });
         await user.save();
+        if (user.stage === 'welcome'){
+            await welcomeFLow(user, phoneNumber, Body)
+        };
 
         // Redirigir a la función correspondiente según el estado del usuario
         switch (user.stage) {
