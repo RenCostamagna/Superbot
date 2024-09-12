@@ -16,7 +16,7 @@ async function handleOrder(user, phoneNumber, Body) {
                     Responde solo con los productos y las cantidades en este formato, no agregues explicaciones adicionales.`;
     console.log(modifyPrompt)
 
-                // Obtener respuesta de OpenAI
+    // Obtener respuesta de OpenAI
     const openAIResponse = await getChatGPTResponse(modifyPrompt);
     const interpretedItems = openAIResponse.trim().split(',').map(item => item.trim());
     console.log(openAIResponse)
@@ -26,7 +26,7 @@ async function handleOrder(user, phoneNumber, Body) {
     const order = [];
                 
     for (const itemData of interpretedItems) {
-        // Buscar cada producto en la base de datos MongoDB
+        // Buscar cada producto en la base de datos
         const matches = itemData.match(/(.+)\s(\d+)$/);
         if (!matches) {
             itemDetails.push(`${itemData}: Formato no válido o cantidad no especificada`);

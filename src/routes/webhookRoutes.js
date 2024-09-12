@@ -2,9 +2,14 @@ const express = require('express');
 const handleOrder = require('../controllers/handleOrder');
 const handleConfirmOrModify = require('../controllers/handleConfirmOrModify');
 const handleModifying = require('../controllers/handleModifying');
-const router = express.Router();
+//const createPaymentLink = require('../controllers/handleLinkPayment.js');
 const handleDeliveryDetails = require('../controllers/handleDeliberyDetails.js');
+
+const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const router = express.Router();
+
 const User = require('../models/User');
+
 
 // Ruta para el webhook
 router.post('/', async (req, res) => {
@@ -36,6 +41,14 @@ router.post('/', async (req, res) => {
             case 'delivery_details':
                 await handleDeliveryDetails(user, phoneNumber, Body);
                 break;
+            case 'payment':
+                const paymentLink = await createPaymentLink(  )
+                await client.messages.create({
+                    body: paymentLink,
+                    from: process.env.TWILIO_WHATSAPP_NUMBER,
+                    to: phoneNumber
+                });
+
             default:
                 // Si el estado no es reconocido
                 await client.messages.create({

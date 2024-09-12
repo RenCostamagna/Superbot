@@ -14,8 +14,15 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
         user.stage = 'delivery_details';
         await user.save();
 
+        const deliveryDetailsMessage = `¡Gracias por confirmar tu pedido! Por favor, proporciona la siguiente información para organizar la entrega:
+                                        \n- Dirección completa de entrega (Calle, número, piso/departamento, ciudad, código postal)
+                                        \n- Nombre del destinatario
+                                        \n- DNI
+                                        \n- Día y hora de entrega preferido (Lun a Vie 9 a 18hs)
+                                        \n\n Nota: Actualmente solo realizamos entregas en Rosario y localidades aledañas.`;
+                                                                      
         await client.messages.create({
-            body: 'Pedido confirmado. Proporcione los detalles de la entrega.',
+            body: deliveryDetailsMessage,
             from: process.env.TWILIO_WHATSAPP_NUMBER,
             to: phoneNumber
         });

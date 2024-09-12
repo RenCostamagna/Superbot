@@ -53,7 +53,7 @@ async function handleModifying(user, phoneNumber, Body){
 
     // Enviar el mensaje de respuesta con la lista, la cantidad y el total
     await client.messages.create({
-        body: `${responseMessage}\n ¿Algo más que quieras cambiar? `,
+        body: `${responseMessage}\n ¿Deseas confirmar este pedido? `,
         from: process.env.TWILIO_WHATSAPP_NUMBER,
         to: phoneNumber
     });
