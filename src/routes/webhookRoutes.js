@@ -3,6 +3,7 @@ const handleOrder = require('../controllers/handleOrder');
 const handleConfirmOrModify = require('../controllers/handleConfirmOrModify');
 const handleModifying = require('../controllers/handleModifying');
 const welcomeFLow = require('../controllers/handlerWelcome.js')
+const handlePayment = require('../controllers/handlePayment.js')
 //const createPaymentLink = require('../controllers/handleLinkPayment.js');
 const handleDeliveryDetails = require('../controllers/handleDeliberyDetails.js');
 
@@ -31,37 +32,33 @@ router.post('/', async (req, res) => {
             await welcomeFLow(user, phoneNumber, Body)
         };
 
+        if (user.stage !== 'welcome'){
         // Redirigir a la función correspondiente según el estado del usuario
-        switch (user.stage) {
-            case 'order':
-                await handleOrder(user, phoneNumber, Body);
-                break;
-            case 'confirm_or_modify':
-                await handleConfirmOrModify(user, phoneNumber, Body);
-                break;
-            case 'modifying':
-                await handleModifying(user, phoneNumber, Body);
-                break;
-            case 'delivery_details':
-                await handleDeliveryDetails(user, phoneNumber, Body);
-                break;
-            case 'payment':
-                const paymentLink = await createPaymentLink(  )
-                await client.messages.create({
-                    body: paymentLink,
-                    from: process.env.TWILIO_WHATSAPP_NUMBER,
-                    to: phoneNumber
-                });
-
-            default:
-                // Si el estado no es reconocido
-                await client.messages.create({
-                    body: 'No pude entender tu mensaje. Por favor, intenta nuevamente.',
-                    from: process.env.TWILIO_WHATSAPP_NUMBER,
-                    to: phoneNumber
-                });
+            switch (user.stage) {
+                case 'order':
+                    await handleOrder(user, phoneNumber, Body);
+                    break;
+                case 'confirm_or_modify':
+                    await handleConfirmOrModify(user, phoneNumber, Body);
+                    break;
+                case 'modifying':
+                    await handleModifying(user, phoneNumber, Body);
+                    break;
+                case 'delivery_details':
+                    await handleDeliveryDetails(user, phoneNumber, Body);
+                    break;
+                case 'payment':
+                    await handlePayment (user, phoneNumber);
+                    break;
+                default:
+                    // Si el estado no es reconocido
+                    await client.messages.create({
+                        body: 'No pude entender tu mensaje. Por favor, intenta nuevamente.',
+                        from: process.env.TWILIO_WHATSAPP_NUMBER,
+                        to: phoneNumber
+                    });
+            }
         }
-
         res.status(200).send('Mensaje procesado');
     } catch (error) {
         console.error('Error procesando el mensaje:', error);

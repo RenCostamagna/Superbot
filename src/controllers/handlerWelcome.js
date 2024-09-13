@@ -3,8 +3,10 @@ const { getChatGPTResponse } = require('../config/openaiClient.js')
 
 async function welcomeFLow (user, phoneNumber, Body) {
     const welcomePrompt = ` Tu tarea es determinar si un mensaje contiene una lista de supermercado. El mensaje puede estar dado en forma de lista o en una sola oración que mencione productos junto con sus cantidades. Por ejemplo, frases como '3 aceites, 2 aguas y 4 cocacolas' deben ser interpretadas como una lista de supermercado. Si el mensaje no parece ser una lista de supermercado, indícalo también.
-                            Si consideras que es una lista de supermercado, respondeme con: si sin puntos ni informacion adicional.
-                            El mensaje es este: ${Body}`
+                            Si consideras que es una lista de supermercado, respondeme con: si, sin puntos ni informacion adicional.
+                            El mensaje es este: ${Body}
+                            
+                            Responde solamente si o no, sin ninguna informacion adicional`
     console.log(welcomePrompt);
     const openAIResponse = await getChatGPTResponse(welcomePrompt);
     console.log(openAIResponse)
