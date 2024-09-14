@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const webhookRoutes = require('./routes/webhookRoutes');  // Importar las rutas
+const { router } = require('./controllers/handleLinkPayment.js')
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(bodyParser.json());
 
 // Usar las rutas para el webhook
 app.use('/webhook', webhookRoutes);
+app.use('/mercadopago', router);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

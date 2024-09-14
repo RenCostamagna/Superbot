@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
                     await handleDeliveryDetails(user, phoneNumber, Body);
                     break;
                 case 'payment':
-                    await handlePayment (user, phoneNumber);
+                    await handlePayment ( phoneNumber);                    
                     break;
                 default:
                     // Si el estado no es reconocido
@@ -58,7 +58,11 @@ router.post('/', async (req, res) => {
                         to: phoneNumber
                     });
             }
+            console.log(user.paymentStatus)
         }
+
+
+
         res.status(200).send('Mensaje procesado');
     } catch (error) {
         console.error('Error procesando el mensaje:', error);

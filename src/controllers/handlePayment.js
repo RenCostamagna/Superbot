@@ -1,8 +1,17 @@
 const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const  { createPaymentLink } = require('../controllers/handleLinkPayment.js');
+const User = require('../models/User')
 
-async function handlePayment ( user, phoneNumber ) {
-    const paymentLink = await createPaymentLink(user); 
+async function handlePayment(phoneNumber) {
+    // Obtén el usuario usando el número de teléfono
+    const user = await User.findOne({ phoneNumber: phoneNumber });
+    
+    if (!user) {
+        throw new Error('Usuario no encontrado.');
+    }
+
+    const userId = user._id;
+    const paymentLink = await createPaymentLink(user, userId); 
     console.log(paymentLink);
 
     await client.messages.create({

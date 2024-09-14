@@ -1,5 +1,5 @@
 const transformOrder = (order) => {
-    const items = order.lastOrder.map(item => ({
+    const items = order.lastOrder.items.map(item => ({
         id: item.name, 
         title: item.name,
         description: item.description, // Puedes agregar descripciones si es necesario

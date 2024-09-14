@@ -11,7 +11,7 @@ async function handleModifying(user, phoneNumber, Body){
                 No incluyas más información, solo los productos y las cantidades. 
                 
                 Ejemplo de respuesta esperada: "manzanas 3, Aceite Natura 2, Pan Bimbo 1"
-                Pedido actual: ${user.lastOrder.map(item => `${item.name} ${item.quantity}`).join(', ')}
+                Pedido actual: ${user.lastOrder.items.map(item => `${item.name} ${item.quantity}`).join(', ')}
                 Respuesta del usuario: ${Body}`;
     console.log(prompt);
 
@@ -51,7 +51,7 @@ async function handleModifying(user, phoneNumber, Body){
         }
     }
                 
-    user.lastOrder = order;
+    user.lastOrder.items = order;
     await user.save();
 
     let responseMessage = `\nAquí tienes tu lista con los productos, cantidad y precio:\n`;

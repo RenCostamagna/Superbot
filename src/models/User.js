@@ -5,7 +5,17 @@ const userSchema = new mongoose.Schema({
     conversation: Array,
     stage: String,
     deliveryDetails: String,
-    lastOrder: Array
+    lastOrder: {
+        items: [
+            {
+                name: String,
+                quantity: Number,
+                price: Number
+            }
+        ],
+        paymentId: String,
+        paymentStatus: String
+    },
 });
 
 const User = mongoose.model('User', userSchema);

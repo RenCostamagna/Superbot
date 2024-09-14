@@ -55,7 +55,7 @@ async function handleOrder(user, phoneNumber, Body) {
         }
     }
                 
-    user.lastOrder = order;
+    user.lastOrder.items = order;
     await user.save();
 
     let responseMessage = `\nAquí tienes tu lista con los productos, cantidad y precio:\n`;
