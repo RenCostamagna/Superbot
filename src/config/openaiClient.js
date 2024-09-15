@@ -16,13 +16,18 @@ const getChatGPTResponse = async (message) => {
                 }
             ],
         });
-
-        // Retornar la respuesta del chatbot
-        return response.choices[0].message.content;
+        const content = response.choices[0]?.message?.content;
+        if (typeof content === 'string') {
+            return content.trim(); // Limpiar espacios en blanco
+        } else {
+            console.error('Error: La respuesta no contiene un contenido válido');
+            return "Lo siento, no pude procesar tu solicitud.";
+        }
     } catch (error) {
         console.error('Error al obtener respuesta de ChatGPT:', error);
         return "Lo siento, no pude procesar tu solicitud.";
     }
 };
+
 
 module.exports = { getChatGPTResponse };

@@ -1,29 +1,32 @@
-const handlePaymentStatus = (status, user) => {
+const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const handlePaymentStatus = async (status, phoneNumber, deliveryDetails) => {
+    let messageBody;
+
+    // Determinar el mensaje basado en el estado del pago
     switch (status) {
         case 'approved':
-            console.log('Pago aprobado. Proceder con el pedido.');
-            // Lógica adicional para un pago aprobado
+            messageBody = `¡Tu pago ha sido acreditado! Gracias por confiar en nuestro servicio. Te notificaremos el día del envío. La dirección es: ${deliveryDetails}`;
             break;
-
         case 'pending':
-            console.log('Pago pendiente. Esperar confirmación.');
-            // Lógica adicional para un pago pendiente
+            messageBody = `El pago está pendiente, continúa tu transacción para confirmar el pedido.`;
             break;
-
         case 'rejected':
-            console.log('Pago rechazado. Notificar al usuario.');
-            // Lógica adicional para un pago rechazado
+            messageBody = `ALGO SALIÓ MAL.\n Tu pago fue rechazado.`;
             break;
-
         case 'cancelled':
-            console.log('Pago cancelado. Actualizar estado del pedido.');
-            // Lógica adicional para un pago cancelado
+            messageBody = `El pago fue cancelado.`;
             break;
-
         default:
-            console.log('Estado del pago desconocido:', status);
+            messageBody = `Estado del pago desconocido.`;
             break;
     }
-};
+    
+    // Enviar el mensaje
+    await client.messages.create({
+        body: messageBody,
+        from: process.env.TWILIO_WHATSAPP_NUMBER,
+        to: phoneNumber
+    });
+}
 
 module.exports = handlePaymentStatus;

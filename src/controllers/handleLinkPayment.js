@@ -25,12 +25,12 @@ const createPaymentLink = async (order, userId) => {
 		items: transformedOrder.items,
 		
 		back_urls: {
-			failure: 'https://20fb-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/webhook',
-			success: 'https://20fb-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/webhook',
-			pending: 'https://20fb-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/webhook',
+			failure: 'https://5dc8-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/webhook',
+			success: 'https://5dc8-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/webhook',
+			pending: 'https://5dc8-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/webhook',
 		},
 		autoreturn: 'approved',
-		notifcation_url: 'https://20fb-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/mercadopago/mercadopago-webhook',
+		notifcation_url: 'https://5dc8-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/mercadopago/mercadopago-webhook',
         metadata: { userId: userId }
 	};
 
@@ -70,9 +70,6 @@ router.post('/mercadopago-webhook', async (req, res) => {
                 console.log('userIdConverter:', payment.metadata);
                 console.log('Tipo de userIdConverter:', typeof userId);
                 
-
-                
-
 				const status = payment.status;
 				//const amount = payment.transaction_amount;
 				//const currency = payment.currency_id;
@@ -108,7 +105,7 @@ router.post('/mercadopago-webhook', async (req, res) => {
                 await newPayment.save();
                 try {
                     const user = await User.findOne({ 'lastOrder.paymentId': paymentId });
-                    handlePaymentStatus(status, user); // Maneja los estados del pago desde aquí
+        
                 } catch (error) {
                     console.error('Error manejando el estado del pago:', error);
                 }
