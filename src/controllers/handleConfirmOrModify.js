@@ -4,27 +4,63 @@ const { getChatGPTResponse } = require('../config/openaiClient.js');
 async function handleConfirmOrModify(user, phoneNumber, Body) {
     try {
         if (Body.toLowerCase() === 'confirmar') {
-            user.stage = 'delivery_details';
-            await user.save();
-
-            const deliveryDetailsMessage = `Sos el encargado de responder los mensajes de WhatsApp de una aplicación que gestiona pedidos de supermercado. 
-            Genera un breve mensaje para continuar con el proceso de pedido. 
-            El mensaje debe solicitarle al usuario su dirección (incluyendo todos los campos), su nombre y apellido, documento nacional de identidad y un día y hora de preferencia para la entrega. 
-            La respuesta debe ser clara y debe incluir las instrucciones para confirmar o modificar el pedido.
-            Ejemplo de respuesta: 
-            " ¡Gracias por confirmar tu pedido! Por favor, proporciona la siguiente información para organizar la entrega:
-            \n- Dirección completa de entrega (Calle, número, piso/departamento, ciudad, código postal)
-            \n- Nombre del destinatario
-            \n- DNI
-            \n- Día y hora de entrega preferido (Lun a Vie 9 a 18hs)
-            \n\n Nota: Actualmente solo realizamos entregas en Rosario y localidades aledañas."`;
-
-            // Enviar mensaje de confirmación de pedido
-            await client.messages.create({
-                body: deliveryDetailsMessage,
-                from: process.env.TWILIO_WHATSAPP_NUMBER,
-                to: phoneNumber
-            });
+            try {
+                // Actualiza el estado del usuario
+                user.stage = 'delivery_details';
+                await user.save();
+            
+                // Genera el mensaje de detalle de entrega
+                const deliveryDetailsMessage = `Sos el encargado de responder los mensajes de WhatsApp de una aplicación que gestiona pedidos de supermercado. 
+                Genera un breve mensaje para continuar con el proceso de pedido. 
+                El mensaje debe solicitarle al usuario su dirección (incluyendo todos los campos), su nombre y apellido, documento nacional de identidad y un día y hora de preferencia para la entrega. 
+                La respuesta debe ser clara y debe incluir las instrucciones para confirmar o modificar el pedido.
+                Ejemplo de respuesta: 
+                " ¡Gracias por confirmar tu pedido! Por favor, proporciona la siguiente información para organizar la entrega:
+                \n- Dirección completa de entrega (Calle, número, piso/departamento, ciudad, código postal)
+                \n- Nombre del destinatario
+                \n- DNI
+                \n- Día y hora de entrega preferido (Lun a Vie 9 a 18hs)
+                \n\n Nota: Actualmente solo realizamos entregas en Rosario y localidades aledañas."`;
+            
+                let openAIMDetailMessage;
+                try {
+                    openAIMDetailMessage = await getChatGPTResponse(deliveryDetailsMessage);
+                } catch (error) {
+                    console.error('Error al obtener la respuesta de ChatGPT:', error);
+                    await client.messages.create({
+                        body: 'Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.',
+                        from: process.env.TWILIO_WHATSAPP_NUMBER,
+                        to: phoneNumber
+                    });
+                    return;
+                }
+            
+                // Envía el mensaje de confirmación de pedido
+                try {
+                    await client.messages.create({
+                        body: openAIMDetailMessage,
+                        from: process.env.TWILIO_WHATSAPP_NUMBER,
+                        to: phoneNumber
+                    });
+                } catch (error) {
+                    console.error('Error al enviar el mensaje con Twilio:', error);
+                    await client.messages.create({
+                        body: 'Hubo un error al enviar el mensaje. Por favor, inténtalo de nuevo más tarde.',
+                        from: process.env.TWILIO_WHATSAPP_NUMBER,
+                        to: phoneNumber
+                    });
+                }
+            
+            } catch (error) {
+                console.error('Error en el proceso:', error);
+                // Enviar un mensaje de error al usuario si es necesario
+                await client.messages.create({
+                    body: 'Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.',
+                    from: process.env.TWILIO_WHATSAPP_NUMBER,
+                    to: phoneNumber
+                });
+            }
+            
         } else if (Body.toLowerCase() === "modificar") {
             user.stage = 'modifying';
             await user.save();
