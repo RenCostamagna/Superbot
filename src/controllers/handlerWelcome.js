@@ -4,32 +4,35 @@ const handleOrder = require('./handleOrder.js');
 
 async function welcomeFLow(user, phoneNumber, Body) {
     const welcomePrompt = `
-        A continuación te proporciono un mensaje del usuario. Tu tarea es identificar si el mensaje es una lista de supermercado, una oración de compra, o un mensaje de compra.
+        Nuestro nombre es Superbot. Tu tarea es analizar los mensajes de los usuarios y proporcionar detalles sobre los productos que mencionan. Responde siguiendo este formato:
 
-        - Una lista de supermercado puede estar en formato de lista directa (por ejemplo, "1 harina 1kg, dos azucar 500g") o en forma de oración completa (por ejemplo, "Hola! quiero un paquete de harina de 1kg y uno de azucar de 500g").
-        - En una oración de compra, el usuario puede pedir productos en términos generales (por ejemplo, "quiero comprar 2 paquetes de harina y 1 de azucar").
-        - Si el mensaje no parece ser una lista de supermercado o una oración de compra que mencione productos, responde con "no" sin información adicional.
+        1. **Nombre del producto**
+        2. **Cantidad**
+        3. **Unidad de medida** (incluye la cantidad y unidad juntos, como '1L')
+        4. **Marca**
 
-        Para los productos que identifiques, responde con:
-        1. El nombre completo del producto con la primera letra en mayúscula y deben estar separados por comas entre si.
-        2. La cantidad total solicitada.
-        3. La unidad de medida, si está presente, y debe ir acompañada de la cantidad total (por ejemplo, "kg", "g", "L", "ml").
+        Si el mensaje del usuario menciona varios productos, proporciona la información de cada uno separados por comas. Y si la marca no esta presente, en su lugar no devulvas nada, dejalo vacio.
 
-        El formato de respuesta debe ser: "NombreProducto CantidadTotal CantidadUnidadDeMedida".
+        Guarda la respuesta en el siguiente formato general: Nombre del producto Cantidad Unidad de medida Marca.
+        Corrije los errores ortograficos y agrega los acentos correspondientes.
 
-        Si el mensaje no es una lista u oración de compra de supermercado, responde simplemente con "no".
+        Ejemplos de cómo debes responder:
+        - Para el mensaje "aceite natura de 1L", tu respuesta debe ser: Aceite 1 1L Natura.
+        - Para el mensaje "dos vino tinto navarro correas de 750ml", tu respuesta debe ser: Vino tinto 2 750ml Navarro Correas.
+        - Para el mensaje "una botella de leche entera de 1L y dos paquetes de galletas oreo", tu respuesta debe ser: Leche entera 1 1L Marca, Galletas Oreo 2 Paquete.
+        - Para el mensaje "dos harina pureza", tu respuesta debe ser: Harina 2 nada Navarro Correas.
+        - Para el mensaje "leche, azucar, harina", tu respuesta debe ser: "Leche 1, Azucar 1, Harina 1".
 
-        Mensaje del usuario:
-        ${Body}
-
-        Responde solo con los productos y las cantidades en el formato especificado, o con "no" si el mensaje no corresponde a una lista o oración de compra. No incluyas explicaciones adicionales.
-    `;
+        Si el mensaje no corresponde a una lista de supermercado, responde solo con "no". Asegurate de que la respuesta "no", sea en minuscula y sin punto al final.
+        No coleques puntos al final items.
+        El mensaje del usuario es el siguiente: ${Body}`;
 
     console.log(welcomePrompt);
-    const openAIResponse = await getChatGPTResponse(welcomePrompt);
+    let openAIResponse = await getChatGPTResponse(welcomePrompt);
     console.log('Respuesta de OpenAI:', openAIResponse);
 
-    // Validar que la respuesta no esté vacía o sea inválida
+    openAIResponse = openAIResponse.replace(/"/g, '')
+
     const response = openAIResponse ? openAIResponse.trim() : '';
     
     if (response === 'no') {
@@ -37,8 +40,8 @@ async function welcomeFLow(user, phoneNumber, Body) {
         await user.save();
 
         const welcomeMessagePrompt = `El mensaje es este: ${Body}
-            Sos el encargado de responder los mensajes de WhatsApp de una aplicacion que se encarga de realizar pedidos por este medio. 
-            Quiero que des una respuesta al mensaje siendo breve y amistoso.  
+            Somos Superbot, un chatbot encargado de gestionar pedidos de supermercado via WhatsApp.
+            Quiero que des una respuesta al mensaje siendo breve y amistoso 
             Por ejemplo: "¡Hola! Bienvenido al Superbot. Por favor, envía tu lista de productos especificando la marca, cantidad y tamaño. Estoy aquí para ayudarte con tu compra ."
         `;
         const openAIWelcomeResponse = await getChatGPTResponse(welcomeMessagePrompt);

@@ -15,7 +15,7 @@ async function handlePayment(phoneNumber) {
     console.log(paymentLink);
 
     await client.messages.create({
-        body: `Para completar tu compra, por favor realiza el pago haciendo clic en el siguiente enlace:\n ${paymentLink}\n Una vez realizado, envie el mensaje: "pago"`,
+        body: `Para completar tu compra, por favor realiza el pago haciendo clic en el siguiente enlace:\n ${paymentLink}`,
         from: process.env.TWILIO_WHATSAPP_NUMBER,
         to: phoneNumber
     });

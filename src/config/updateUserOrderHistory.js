@@ -11,19 +11,12 @@ const updateOrderHistory = async (user) => {
             totalAmount: user.lastOrder.totalAmount,
             deliveryDetails: user.deliveryDetails, 
             paymentStatus: user.lastOrder.paymentStatus,
-            orderDate: new Date()
+            orderDate: new Date(),
+            shippingStatus: user.lastOrder.deliveryDetails
         };
 
         // Agregar la nueva orden al historial de órdenes
         user.orderHistory.push(newOrder);
-
-        // Limpiar `lastOrder`
-        user.lastOrder = {
-            items: [],
-            totalAmount: 0,
-            paymentId: '',
-            paymentStatus: ''
-        };
 
         // Guardar los cambios en el usuario
         await user.save();

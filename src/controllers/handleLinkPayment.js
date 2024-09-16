@@ -8,7 +8,7 @@ const User = require('../models/User')
 const Payment = require('../models/payment')
 const handlePaymentStatus = require('./handlePaymentStatus.js');
 
-const client = new MercadoPagoConfig({ accessToken: 'TEST-6235347846124389-091109-7d711dac37e885b86ab061148167e17f-435553967'  } );
+const client = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN  } );
 
 
 const createPaymentLink = async (order, userId) => {
@@ -25,12 +25,12 @@ const createPaymentLink = async (order, userId) => {
 		items: transformedOrder.items,
 		
 		back_urls: {
-			failure: 'https://5dc8-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/webhook',
-			success: 'https://5dc8-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/webhook',
-			pending: 'https://5dc8-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/webhook',
+			failure: 'https://0405-2803-9800-98ca-851e-9560-adef-e7b1-f247.ngrok-free.app/webhook',
+			success: 'https://0405-2803-9800-98ca-851e-9560-adef-e7b1-f247.ngrok-free.app/webhook',
+			pending: 'https://0405-2803-9800-98ca-851e-9560-adef-e7b1-f247.ngrok-free.app/webhook',
 		},
 		autoreturn: 'approved',
-		notifcation_url: 'https://5dc8-2803-9800-98ca-851e-5cb1-b2f2-3425-dca8.ngrok-free.app/mercadopago/mercadopago-webhook',
+		notifcation_url: 'https://0405-2803-9800-98ca-851e-9560-adef-e7b1-f247.ngrok-free.app/mercadopago/mercadopago-webhook',
         metadata: { userId: userId }
 	};
 
@@ -57,7 +57,7 @@ router.post('/mercadopago-webhook', async (req, res) => {
             const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
                 method: 'GET',
                 headers: { 
-                    'Authorization': `Bearer TEST-6235347846124389-091109-7d711dac37e885b86ab061148167e17f-435553967`
+                    'Authorization': `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`
                 }
             });
 

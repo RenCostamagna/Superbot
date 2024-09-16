@@ -1,44 +1,50 @@
 const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const { getChatGPTResponse } = require('../config/openaiClient.js');
+const handleModifying = require('../controllers/handleModifying.js');
 
 async function handleConfirmOrModify(user, phoneNumber, Body) {
     try {
-        if (Body.toLowerCase() === 'confirmar') {
+        const modifyOrConfirmPrompt = `
+            Sos el encargado de responder los mensajes de WhatsApp de una aplicación que gestiona pedidos de supermercado. 
+            Te mandare un breve mensaje para continuar con el proceso de pedido en el cual tienes que identificar si la persona desea confirmar o realizar una modificación en el mismo.
+            En caso de ser un mensaje de confirmación, devolve la palabra "confirmar".
+            Tene en cuenta que la persona puede responder de la siguiente manera, hacindo referencia a que no quiere realizar modificaciones: Por ejemplo: "No", "No quiero realizar modificaciones", "Asi esta bien",
+            Si el mensaje parece una modificación de un pedido, que integra productos y cantidades, responde "modificar".
+            En este caso la persona demostrara intencion de modificar o proporcionara productos cons sus descripciones directamente: Por ejemplo: "Quiero agregar una leche y un azucar", "leche, azucar, aceite","Quiero hacer modificaciones","Si, quiero hacer modificaciones" o "Si".
+            El mensaje es el siguiente: ${Body}.
+            Por favor, no hagas aclaraciones adicionales, solo responde con las palabras indicadas sin puntos al final.
+        `;
+
+        // Asegúrate de esperar el resultado de OpenAI con await
+        const modifyOrConfirmResponse = await getChatGPTResponse(modifyOrConfirmPrompt);
+
+        // Verifica si modifyOrConfirmResponse es una cadena de texto
+        if (!modifyOrConfirmResponse || typeof modifyOrConfirmResponse !== 'string') {
+            throw new Error('Respuesta de OpenAI no válida: no es una cadena de texto.');
+        }
+
+        console.log(modifyOrConfirmResponse);
+
+        if (modifyOrConfirmResponse.toLowerCase().trim() === 'confirmar') {
             try {
                 // Actualiza el estado del usuario
                 user.stage = 'delivery_details';
                 await user.save();
-            
+
                 // Genera el mensaje de detalle de entrega
-                const deliveryDetailsMessage = `Sos el encargado de responder los mensajes de WhatsApp de una aplicación que gestiona pedidos de supermercado. 
-                Genera un breve mensaje para continuar con el proceso de pedido. 
-                El mensaje debe solicitarle al usuario su dirección (incluyendo todos los campos), su nombre y apellido, documento nacional de identidad y un día y hora de preferencia para la entrega. 
-                La respuesta debe ser clara y debe incluir las instrucciones para confirmar o modificar el pedido.
-                Ejemplo de respuesta: 
-                " ¡Gracias por confirmar tu pedido! Por favor, proporciona la siguiente información para organizar la entrega:
-                \n- Dirección completa de entrega (Calle, número, piso/departamento, ciudad, código postal)
-                \n- Nombre del destinatario
-                \n- DNI
-                \n- Día y hora de entrega preferido (Lun a Vie 9 a 18hs)
-                \n\n Nota: Actualmente solo realizamos entregas en Rosario y localidades aledañas."`;
-            
-                let openAIMDetailMessage;
+                const deliveryDetailsMessage = `
+                    ¡Gracias por confirmar tu pedido! Por favor, proporciona la siguiente información para organizar la entrega:
+                    \n- Dirección completa de entrega (Calle, número, piso/departamento, ciudad, código postal)
+                    \n- Nombre del destinatario
+                    \n- DNI
+                    \n- Día y hora de entrega preferido (Lun a Vie 9 a 18hs)
+                    \n\n Nota: Actualmente solo realizamos entregas en Rosario y localidades aledañas.
+                `;
+
                 try {
-                    openAIMDetailMessage = await getChatGPTResponse(deliveryDetailsMessage);
-                } catch (error) {
-                    console.error('Error al obtener la respuesta de ChatGPT:', error);
+                    // Envía el mensaje de confirmación de pedido
                     await client.messages.create({
-                        body: 'Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.',
-                        from: process.env.TWILIO_WHATSAPP_NUMBER,
-                        to: phoneNumber
-                    });
-                    return;
-                }
-            
-                // Envía el mensaje de confirmación de pedido
-                try {
-                    await client.messages.create({
-                        body: openAIMDetailMessage,
+                        body: deliveryDetailsMessage,
                         from: process.env.TWILIO_WHATSAPP_NUMBER,
                         to: phoneNumber
                     });
@@ -50,53 +56,31 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
                         to: phoneNumber
                     });
                 }
-            
+
             } catch (error) {
-                console.error('Error en el proceso:', error);
-                // Enviar un mensaje de error al usuario si es necesario
+                console.error('Error en el proceso de confirmación:', error);
                 await client.messages.create({
                     body: 'Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.',
                     from: process.env.TWILIO_WHATSAPP_NUMBER,
                     to: phoneNumber
                 });
             }
-            
-        } else if (Body.toLowerCase() === "modificar") {
-            user.stage = 'modifying';
-            await user.save();
 
-            const modifyingPrompt = `Sos el encargado de responder los mensajes de WhatsApp de una aplicación que gestiona pedidos de supermercado. 
-            Genera un breve mensaje para continuar con el proceso de modificación del pedido. 
-            El mensaje debe preguntar al usuario qué productos quiere modificar. 
-            La respuesta debe ser clara y debe incluir las instrucciones para modificar el pedido.
-            Ejemplo de respuesta: "Genial! Ahora procederemos con la modificación. Indique qué quiere modificar y lo ayudaremos!".`;
+        } else if (modifyOrConfirmResponse.trim().toLowerCase() === 'modificar') {
 
-            let modifyingAIResponse;
-            try {
-                modifyingAIResponse = await getChatGPTResponse(modifyingPrompt);
-                if (!modifyingAIResponse || typeof modifyingAIResponse !== 'string') {
-                    throw new Error('Respuesta de OpenAI no válida para la modificación');
-                }
-            } catch (error) {
-                modifyingAIResponse = "Genial! Ahora procederemos con la modificación. Indique qué quiere modificar y lo ayudaremos.";
-                console.error('Error al obtener respuesta de OpenAI para la modificación:', error);
-            }
+            await handleModifying(user, phoneNumber, Body)
 
-            // Enviar mensaje de modificación de pedido
-            try {
-                await client.messages.create({
-                    body: modifyingAIResponse,
-                    from: process.env.TWILIO_WHATSAPP_NUMBER,
-                    to: phoneNumber
-                });
-            } catch (error) {
-                console.error('Error al enviar el mensaje con Twilio:', error.message);
-            }
         } else {
             console.log('Opción no reconocida:', Body);
         }
+
     } catch (error) {
         console.error('Error en handleConfirmOrModify:', error.message);
+        await client.messages.create({
+            body: 'Hubo un error en el sistema. Por favor, inténtalo de nuevo más tarde.',
+            from: process.env.TWILIO_WHATSAPP_NUMBER,
+            to: phoneNumber
+        });
     }
 }
 

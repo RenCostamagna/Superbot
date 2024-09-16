@@ -11,12 +11,14 @@ const userSchema = new mongoose.Schema({
                 name: String,
                 quantity: Number,
                 itemWeightOrVolume: String,
-                price: Number
+                price: Number,
+                brand: String
             }
         ],
         totalAmount: Number,
         paymentId: String,
-        paymentStatus: String
+        paymentStatus: String,
+        deliveryStatus: String
     },
     orderHistory: [
         {
@@ -32,7 +34,8 @@ const userSchema = new mongoose.Schema({
             totalAmount: Number,
             orderDate: { type: Date, default: Date.now },
             deliveryDetails: String,
-            paymentStatus: String
+            paymentStatus: String,
+            shippingStatus: String
         }
     ]
 });

@@ -1,6 +1,7 @@
 const express = require('express');
 
 //const handleOrder = require('../controllers/handleOrder');
+const handleHomeDelivery = require('../controllers/handleHomeDelivery.js')
 const handleConfirmOrModify = require('../controllers/handleConfirmOrModify');
 const handleModifying = require('../controllers/handleModifying');
 const welcomeFLow = require('../controllers/handlerWelcome.js')
@@ -9,7 +10,6 @@ const handlePaymentStatus = require('../controllers/handlePaymentStatus.js')
 const handleDeliveryDetails = require('../controllers/handleDeliberyDetails.js');
 const updateStock = require('../config/updateStock.js')
 const clearUserCache = require('../config/clearCache.js')
-const {updateOrderHistory} = require('../config/updateUserOrderHistory.js')
 
 const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const router = express.Router();
@@ -42,21 +42,24 @@ router.post('/', async (req, res) => {
     
             user.conversation.push({ message: Body, direction: 'incoming' });
             await user.save();
-            if (user.stage === 'welcome'){
-                await welcomeFLow(user, phoneNumber, Body)
-            };
     
-            if (user.stage !== 'welcome' && user.stage !== 'payment' && user.stage !== 'ending'){
+            if (user.stage !== 'payment' && user.stage !== 'ending'){
             // Redirigir a la función correspondiente según el estado del usuario
                 switch (user.stage) {
+                    case 'welcome':
+                        await welcomeFLow(user, phoneNumber, Body);
+                        break;
                     case 'confirm_or_modify':
                         await handleConfirmOrModify(user, phoneNumber, Body);
                         break;
-                    case 'modifying':
+                    case 'awaiting_modification_details':
                         await handleModifying(user,phoneNumber,Body)
                         break;
                     case 'delivery_details':
                         await handleDeliveryDetails(user, phoneNumber, Body);
+                        break;
+                    case 'home_delivery':
+                        await handleHomeDelivery(user, phoneNumber, Body);
                         break;
                     default:
                         // Si el estado no es reconocido
@@ -73,12 +76,9 @@ router.post('/', async (req, res) => {
      
         try {
             if (user.stage === 'payment') {
-                await handlePayment(phoneNumber);
-                
+                await handlePayment(phoneNumber);     
                 // Actualizar el estado del usuario a 'ending'
                 user.stage = 'ending';
-                
-                // Guardar los cambios en el usuario
                 await user.save();
             }
         } catch (error) {
@@ -88,8 +88,10 @@ router.post('/', async (req, res) => {
         try {
             if (user.stage === 'ending') {
                 // Manejar el estado del pago
+                user.lastOrder.deliveryStatus = 'pending';
                 const userStage = user.lastOrder.paymentStatus;
-                await handlePaymentStatus(userStage, phoneNumber, user.deliveryDetails);
+                const userDeliveryStage = user.lastOrder.deliveryStatus
+                await handlePaymentStatus(userStage, phoneNumber, userDeliveryStage);
                 
                 // Verificar el estado del pago y tomar acciones correspondientes
                 if (user.lastOrder.paymentStatus === "approved") {
@@ -101,9 +103,8 @@ router.post('/', async (req, res) => {
                     // Cambiar el estado del usuario
                     user.stage = "home_delivery";
                     user.lastOrder.paymentStatus = "accredited";
-                              
-                    await updateOrderHistory(user);
                     await user.save();
+                              
                 }
             }
         } catch (error) {
