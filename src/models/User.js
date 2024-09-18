@@ -6,19 +6,7 @@ const userSchema = new mongoose.Schema({
     stage: String,
     deliveryDetails: String,
     lastOrder: {
-        items: [
-            {
-                name: String,
-                quantity: Number,
-                itemWeightOrVolume: String,
-                price: Number,
-                brand: String
-            }
-        ],
-        totalAmount: Number,
-        paymentId: String,
-        paymentStatus: String,
-        deliveryStatus: String
+        items: [],
     },
     orderHistory: [
         {

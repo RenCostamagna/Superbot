@@ -22,3 +22,15 @@
         Si el mensaje no corresponde a una lista de supermercado, responde solo con "no". Asegurate de que la respuesta "no", sea en minuscula y sin punto al final.
         No coleques puntos al final items.
         El mensaje del usuario es el siguiente: ${Body}`
+
+
+
+
+                        const deliveryDetailsMessage = `
+                    ¡Gracias por confirmar tu pedido! Por favor, proporciona la siguiente información para organizar la entrega:
+                    \n- Dirección completa de entrega (Calle, número, piso/departamento, ciudad, código postal)
+                    \n- Nombre del destinatario
+                    \n- DNI
+                    \n- Día y hora de entrega preferido (Lun a Vie 9 a 18hs)
+                    \n\n Nota: Actualmente solo realizamos entregas en Rosario y localidades aledañas.
+                `

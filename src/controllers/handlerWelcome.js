@@ -80,35 +80,3 @@ module.exports = welcomeFlow;
 
 
 
-/*
-    if (response === 'no') {
-        user.stage = 'welcome';
-        await user.save();
-        
-        console.log(previousMessage)
-        const welcomeMessagePrompt = `El mensaje es este: ${Body}
-                                      Reponde de forma coherente y amigable a ese mensaje, conociendo tu funcion indicada`;
-        const openAIWelcomeResponse = await getChatGPTResponse(welcomeMessagePrompt, previousMessage);
-        console.log('Respuesta de bienvenida:', openAIWelcomeResponse);
-
-        if (openAIWelcomeResponse && openAIWelcomeResponse.trim()) {
-            try {
-                await client.messages.create({
-                    body: openAIWelcomeResponse.trim(),
-                    from: process.env.TWILIO_WHATSAPP_NUMBER,
-                    to: phoneNumber
-                });
-            } catch (error) {
-                console.error("Error al enviar el mensaje:", error.message);
-            }
-        } else {
-            console.error("No hay respuesta válida para enviar");
-        }
-    } else {
-        user.stage = 'order';
-        await user.save();
-        await handleOrder(user, phoneNumber, openAIResponse);
-    }
-}
-*/
-
