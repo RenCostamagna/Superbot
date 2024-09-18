@@ -14,10 +14,18 @@ const clearUserCache = require('../config/clearCache.js')
 const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const router = express.Router();
 
-
 const User = require('../models/User');
 
+const systemPrompt = `  Eres un vendedor del supermercado Superbot. Tu tarea es ayudar a los usuarios a realizar sus compras basándote en la información de la tabla de inventario proporcionada.\n 
+                        Si el usuario realiza pregustas acerca del funcionamiento, respondele ayudandolo, pero siempre con sentido al mensaje que recibes.
+                        Debes guardar toda la información en la tabla Pedido.\n
+                        Responde siempre manteniendo el contexto de la conversación.\n
+                        Si el usuario solicita una lista de productos, responde en un solo mensaje con una orden de pedido que incluya los precios, marcas y el costo total del pedido.\n
+                        Si un producto no está en stock, responde con un mensaje como: 'Lo siento, el producto [NombreProducto] no está disponible.'\n
+                        Asegúrate de que la respuesta sea clara y contenga solo la información solicitada, sin detalles adicionales sobre el inventario o el stock.`;
 
+
+                        
 // Ruta para el webhook
 router.post('/', async (req, res) => {
 
@@ -39,10 +47,20 @@ router.post('/', async (req, res) => {
                 user = new User({ phoneNumber, conversation: [], stage: 'welcome' });
                 await user.save();
             }
-    
-            user.conversation.push({ message: Body, direction: 'incoming' });
-            await user.save();
-    
+            
+            const conversation = user.conversation || [];
+            console.log('Conversación actual:', conversation);
+        
+            // Verifica si el mensaje del sistema ya está en la conversación
+            const hasSystemMessage = conversation.some(msg => msg.role === 'system');
+       
+            if (!hasSystemMessage) {
+                // Agrega el mensaje del sistema solo si no está presente
+                const systemMessage = { role: 'system', content: systemPrompt };
+                conversation.push(systemMessage);
+                await user.save();
+            }
+
             if (user.stage !== 'payment' && user.stage !== 'ending'){
             // Redirigir a la función correspondiente según el estado del usuario
                 switch (user.stage) {

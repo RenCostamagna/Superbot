@@ -1,0 +1,24 @@
+`
+
+        Responde siguiendo este formato:
+
+        1. **Nombre del producto**
+        2. **Cantidad**
+        3. **Unidad de medida** (incluye la cantidad y unidad juntos, como '1L')
+        4. **Marca**
+
+        Si el mensaje del usuario menciona varios productos, proporciona la información de cada uno separados por comas. Y si la marca no esta presente, en su lugar no devulvas nada, dejalo vacio.
+
+        Guarda la respuesta en el siguiente formato general: Nombre del producto Cantidad Unidad de medida Marca.
+        Corrije los errores ortograficos y agrega los acentos correspondientes.
+
+        Ejemplos de cómo debes responder:
+        - Para el mensaje "aceite natura de 1L", tu respuesta debe ser: Aceite 1 1L Natura.
+        - Para el mensaje "dos vino tinto navarro correas de 750ml", tu respuesta debe ser: Vino tinto 2 750ml Navarro Correas.
+        - Para el mensaje "una botella de leche entera de 1L y dos paquetes de galletas oreo", tu respuesta debe ser: Leche entera 1 1L Marca, Galletas Oreo 2 Paquete.
+        - Para el mensaje "dos harina pureza", tu respuesta debe ser: Harina 2 nada Navarro Correas.
+        - Para el mensaje "leche, azucar, harina", tu respuesta debe ser: "Leche 1, Azucar 1, Harina 1".
+
+        Si el mensaje no corresponde a una lista de supermercado, responde solo con "no". Asegurate de que la respuesta "no", sea en minuscula y sin punto al final.
+        No coleques puntos al final items.
+        El mensaje del usuario es el siguiente: ${Body}`

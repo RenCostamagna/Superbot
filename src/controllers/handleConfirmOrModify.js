@@ -4,25 +4,10 @@ const handleModifying = require('../controllers/handleModifying.js');
 
 async function handleConfirmOrModify(user, phoneNumber, Body) {
     try {
-        const modifyOrConfirmPrompt = `
-            Sos el encargado de responder los mensajes de WhatsApp de una aplicación que gestiona pedidos de supermercado. 
-            Te mandare un breve mensaje para continuar con el proceso de pedido en el cual tienes que identificar si la persona desea confirmar o realizar una modificación en el mismo.
-            En caso de ser un mensaje de confirmación, devolve la palabra "confirmar".
-            Tene en cuenta que la persona puede responder de la siguiente manera, hacindo referencia a que no quiere realizar modificaciones: Por ejemplo: "No", "No quiero realizar modificaciones", "Asi esta bien",
-            Si el mensaje parece una modificación de un pedido, que integra productos y cantidades, responde "modificar".
-            En este caso la persona demostrara intencion de modificar o proporcionara productos cons sus descripciones directamente: Por ejemplo: "Quiero agregar una leche y un azucar", "leche, azucar, aceite","Quiero hacer modificaciones","Si, quiero hacer modificaciones" o "Si".
-            El mensaje es el siguiente: ${Body}.
-            Por favor, no hagas aclaraciones adicionales, solo responde con las palabras indicadas sin puntos al final.
-        `;
+        const modifyOrConfirmPrompt = `Clasifica la intencion de este mensaje, reconociendo si es\n1. Modificar\n2. Confirmar.\n\n Responde solamente con la palabra 'modificar' o con 'confirmar'.`;
 
         // Asegúrate de esperar el resultado de OpenAI con await
-        const modifyOrConfirmResponse = await getChatGPTResponse(modifyOrConfirmPrompt);
-
-        // Verifica si modifyOrConfirmResponse es una cadena de texto
-        if (!modifyOrConfirmResponse || typeof modifyOrConfirmResponse !== 'string') {
-            throw new Error('Respuesta de OpenAI no válida: no es una cadena de texto.');
-        }
-
+        const modifyOrConfirmResponse = await getChatGPTResponse([{ role: 'user', content: `${modifyOrConfirmPrompt}, El mensaje es: ${Body}`}]);
         console.log(modifyOrConfirmResponse);
 
         if (modifyOrConfirmResponse.toLowerCase().trim() === 'confirmar') {

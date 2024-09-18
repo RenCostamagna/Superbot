@@ -11,7 +11,7 @@ async function clearUserCache(phoneNumber) {
             console.error(`Usuario con número de teléfono ${phoneNumber} no encontrado.`);
             return null;
         }
-        
+        user.conversation = [];
         user.stage = 'welcome'; 
         user.lastOrder = {
             items: [],

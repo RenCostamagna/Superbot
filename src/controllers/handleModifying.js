@@ -3,7 +3,7 @@ const { convertPrice } = require('../utils/converPrice.js');
 const { getChatGPTResponse } = require('../config/openaiClient.js');
 const Item = require('../models/item.js');
 
-async function handleModifying(user, phoneNumber, Body) {
+async function handleModifying(user, phoneNumber, openAIResponse, Body) {
     // Primer paso: Identificar si el mensaje es una solicitud de modificación o ya contiene modificaciones.
     const identificationPrompt = `
             A continuación te proporciono un mensaje del usuario. Tu tarea es identificar si el mensaje es una solicitud para realizar una modificación en el pedido o si el mensaje ya contiene las modificaciones necesarias.

@@ -1,24 +1,21 @@
+const { response } = require('express');
 const OpenAI = require('openai');
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-const getChatGPTResponse = async (message) => {
+ 
+
+const getChatGPTResponse = async ( message ) => {
     try {
         const response = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                {
-                    role: "user",
-                    content: message
-                }
-            ],
+            model: "gpt-4o-mini",
+            messages: message,
+            temperature: 0.7,
         });
 
         // Log de la respuesta completa para depuración
-        //console.log('Respuesta completa de OpenAI:', response);
-
         const content = response.choices[0]?.message?.content;
 
         if (typeof content === 'string') {
