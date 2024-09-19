@@ -13,12 +13,12 @@ const updateStock = async (userId) => {
         }
 
         // Verificar que el pedido exista y tenga ítems
-        if (!user.lastOrder || !user.lastOrder.items || user.lastOrder.items.length === 0) {
+        if (!user.lastOrderToLink || !user.lastOrderToLink.items || user.lastOrderToLink.items.length === 0) {
             throw new Error('No hay ítems en el último pedido.');
         }
 
         // Iterar sobre los ítems del pedido y actualizar el stock
-        for (const item of user.lastOrder.items) {
+        for (const item of user.lastOrderToLink.items) {
             const { name, quantity } = item;
 
             // Encontrar el ítem en la colección de stock

@@ -6,16 +6,15 @@ const express = require('express')
 const router = express.Router();
 const User = require('../models/User')
 const Payment = require('../models/payment')
-const handlePaymentStatus = require('./handlePaymentStatus.js');
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN  } );
 
 
 const createPaymentLink = async (order, userId) => {
-	if (!order || !order.lastOrder) {
+	if (!order || !order.lastOrderToLink) {
         throw new Error('El objeto de orden no es válido o no contiene la propiedad lastOrder.');
     }
-
+    console.log('order: ', order)
 	const transformedOrder = transformOrder(order);
 
 	if (!transformedOrder.items || transformedOrder.items.length === 0) {
@@ -25,12 +24,12 @@ const createPaymentLink = async (order, userId) => {
 		items: transformedOrder.items,
 		
 		back_urls: {
-			failure: 'https://0405-2803-9800-98ca-851e-9560-adef-e7b1-f247.ngrok-free.app/webhook',
-			success: 'https://0405-2803-9800-98ca-851e-9560-adef-e7b1-f247.ngrok-free.app/webhook',
-			pending: 'https://0405-2803-9800-98ca-851e-9560-adef-e7b1-f247.ngrok-free.app/webhook',
+			failure: 'https://2b57-2803-9800-98ca-851e-84b0-c594-7e0e-aaac.ngrok-free.app/webhook',
+			success: 'https://2b57-2803-9800-98ca-851e-84b0-c594-7e0e-aaac.ngrok-free.app/webhook',
+			pending: 'https://2b57-2803-9800-98ca-851e-84b0-c594-7e0e-aaac.ngrok-free.app/webhook',
 		},
 		autoreturn: 'approved',
-		notifcation_url: 'https://0405-2803-9800-98ca-851e-9560-adef-e7b1-f247.ngrok-free.app/mercadopago/mercadopago-webhook',
+		notifcation_url: 'https://2b57-2803-9800-98ca-851e-84b0-c594-7e0e-aaac.ngrok-free.app/mercadopago/mercadopago-webhook',
         metadata: { userId: userId }
 	};
 
@@ -83,8 +82,8 @@ router.post('/mercadopago-webhook', async (req, res) => {
                     { _id: userId },
                     { 
                         $set: {
-                            'lastOrder.paymentStatus': status,
-                            'lastOrder.paymentId': paymentId
+                            'lastOrderToLink.paymentStatus': status,
+                            'lastOrderToLink.paymentId': paymentId
                         }
                     }
                 );
@@ -104,7 +103,7 @@ router.post('/mercadopago-webhook', async (req, res) => {
 
                 await newPayment.save();
                 try {
-                    const user = await User.findOne({ 'lastOrder.paymentId': paymentId });
+                    const user = await User.findOne({ 'lastOrderToLink.paymentId': paymentId });
         
                 } catch (error) {
                     console.error('Error manejando el estado del pago:', error);

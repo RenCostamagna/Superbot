@@ -4,15 +4,16 @@ const generateUniqueOrderId = () => {
 };
 
 const updateOrderHistory = async (user) => {
-    if (user.lastOrder && user.lastOrder.items.length > 0) {
+    if (user.lastOrderToLink && user.lastOrderToLink.items.length > 0) {
         const newOrder = {
             orderId: generateUniqueOrderId(), // Genera un ID único para el pedido
-            items: user.lastOrder.items,
-            totalAmount: user.lastOrder.totalAmount,
+            items: user.lastOrderToLink.items,
+            totalAmount: user.lastOrderToLink.totalAmount,
             deliveryDetails: user.deliveryDetails, 
-            paymentStatus: user.lastOrder.paymentStatus,
+            paymentStatus: user.lastOrderToLink.paymentStatus,
             orderDate: new Date(),
-            shippingStatus: user.lastOrder.deliveryDetails
+            shippingStatus: user.lastOrderToLink.deliveryStatus,
+            converersation: user.conversation
         };
 
         // Agregar la nueva orden al historial de órdenes

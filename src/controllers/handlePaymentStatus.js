@@ -1,19 +1,40 @@
 const Shipping = require('../models/shipping.js');
+const User = require('../models/User.js');
+const { getChatGPTResponse } = require('../config/openaiClient.js');
 
 const client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const handlePaymentStatus = async (status, phoneNumber, deliveryStatus) => {
     let messageBody;
+
+    const user = await User.findOne({phoneNumber})
 
     const shipping = await Shipping.findOne({
         phoneNumber: phoneNumber, 
         estado: deliveryStatus,
     });
 
+    const conversation = user.conversation;
+
     console.log(shipping);
     // Determinar el mensaje basado en el estado del pago
     switch (status) {
         case 'approved':
-            messageBody = `¡Tu pago ha sido acreditado! Gracias por confiar en nuestro servicio. La entrega fue programada para el ${shipping.diaYHoraEntrega}. Direccion: ${shipping.direccionCompleta}`;
+            responseMessage = `El pago del usuario se acredito. La entrega fue programada para el ${shipping.diaYHoraEntrega}. Direccion: ${shipping.direccionCompleta}. Genera un mensaje para esto.`;
+            const conversationMessages = conversation.map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+              }));
+            
+              const messageBody = await getChatGPTResponse([
+                ...conversationMessages,
+                {role: 'system', content: messageBody},
+              ]);
+
+              conversation.push({ role: "assistant", content: messageBody });
+              await user.save();
+              console.log(user.conversation);
+
+            ;
             break;
         case 'pending':
             messageBody = `El pago está pendiente, continúa tu transacción para confirmar el pedido.`;
