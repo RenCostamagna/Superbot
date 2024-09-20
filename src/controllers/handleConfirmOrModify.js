@@ -13,8 +13,10 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
          2. Confirmar.
          3. Cancelar.
         El mensaje que vas a tener que identificar, puede ser una oracion o simplemente la palabra.
+        Identifica bien las oraciones que se encargan de confirmar la seleccion de un producto en particular, con las de confirmacion del pedido.
         Se lo mas criterioso posible porque depende de tu interpretacion la continuacion de un flujo de programacion.
         En el caso de que el mensaje contenga alguna pregunto acerca de como realizar modificaciones o algo por el estilo, responde 'modificar' de igual manera.
+        Asegurate de responder con cancelar solo cuando la intecion sea muy clara y se mencione la palabra cancelar.
         Responde solamente con la palabra 'modificar', con 'confirmar', o con 'cancelar'.`;
 
     const conversation = user.conversation;
@@ -72,6 +74,7 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
       return;
     } else if (modifyOrConfirmResponse.trim().toLowerCase() === "cancelar") {
       try {
+        console.log(modifyOrConfirmResponse)
         const conversationMessages = conversation.map((msg) => ({
           role: msg.role,
           content: msg.content,

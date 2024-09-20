@@ -6,6 +6,7 @@ const express = require('express')
 const router = express.Router();
 const User = require('../models/User')
 const Payment = require('../models/payment')
+const handlePaymentStatus = require('../controllers/handlePaymentStatus.js');
 
 const client = new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN  } );
 
@@ -24,12 +25,12 @@ const createPaymentLink = async (order, userId) => {
 		items: transformedOrder.items,
 		
 		back_urls: {
-			failure: 'https://2b57-2803-9800-98ca-851e-84b0-c594-7e0e-aaac.ngrok-free.app/webhook',
-			success: 'https://2b57-2803-9800-98ca-851e-84b0-c594-7e0e-aaac.ngrok-free.app/webhook',
-			pending: 'https://2b57-2803-9800-98ca-851e-84b0-c594-7e0e-aaac.ngrok-free.app/webhook',
+			failure: 'https://5ad5-2803-9800-98ca-851e-5479-5fba-c3cd-2c2b.ngrok-free.app/webhook',
+			success: 'https://5ad5-2803-9800-98ca-851e-5479-5fba-c3cd-2c2b.ngrok-free.app/webhook',
+			pending: 'https://5ad5-2803-9800-98ca-851e-5479-5fba-c3cd-2c2b.ngrok-free.app/webhook',
 		},
 		autoreturn: 'approved',
-		notifcation_url: 'https://2b57-2803-9800-98ca-851e-84b0-c594-7e0e-aaac.ngrok-free.app/mercadopago/mercadopago-webhook',
+		notifcation_url: 'https://5ad5-2803-9800-98ca-851e-5479-5fba-c3cd-2c2b.ngrok-free.app/mercadopago/mercadopago-webhook',
         metadata: { userId: userId }
 	};
 
@@ -70,12 +71,6 @@ router.post('/mercadopago-webhook', async (req, res) => {
                 console.log('Tipo de userIdConverter:', typeof userId);
                 
 				const status = payment.status;
-				//const amount = payment.transaction_amount;
-				//const currency = payment.currency_id;
-				//const paymentMethod = payment.payment_method_id;
-				//const payerEmail = payment.payer.email;
-				//const transactionDate = payment.date_approved || payment.date_created;
-				//const description = payment.description;
 
 				console.log(status);
                 await User.updateOne(
@@ -83,7 +78,8 @@ router.post('/mercadopago-webhook', async (req, res) => {
                     { 
                         $set: {
                             'lastOrderToLink.paymentStatus': status,
-                            'lastOrderToLink.paymentId': paymentId
+                            'lastOrderToLink.paymentId': paymentId,
+                            'lastOrderToLink.deliveryStatus': 'pending'
                         }
                     }
                 );
@@ -109,7 +105,18 @@ router.post('/mercadopago-webhook', async (req, res) => {
                     console.error('Error manejando el estado del pago:', error);
                 }
 
-                res.sendStatus(200); // Notifica que la petición se procesó correctamente
+                if (status === 'approved') {
+                    // Obtener el número de teléfono del usuario (debes ajustarlo según tu esquema)
+                    const user = await User.findById(userId);
+                    const phoneNumber = user.phoneNumber;
+
+                    // Llamar a la función handlePaymentStatus para gestionar el envío automático del mensaje
+                    await handlePaymentStatus(status, phoneNumber, user.lastOrderToLink.deliveryStatus);
+                }
+
+                // Responder que la petición fue procesada correctamente
+                res.sendStatus(200);
+
             } else {
                 console.error('Error al obtener los detalles del pago:', response.status, await response.text());
                 res.sendStatus(500);

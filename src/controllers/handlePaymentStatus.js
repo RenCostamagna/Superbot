@@ -12,7 +12,7 @@ const handlePaymentStatus = async (status, phoneNumber, deliveryStatus) => {
         phoneNumber: phoneNumber, 
         estado: deliveryStatus,
     });
-
+    console.log(shipping)
     const conversation = user.conversation;
 
     console.log(shipping);
@@ -25,9 +25,9 @@ const handlePaymentStatus = async (status, phoneNumber, deliveryStatus) => {
                 content: msg.content,
               }));
             
-              const messageBody = await getChatGPTResponse([
+                messageBody = await getChatGPTResponse([
                 ...conversationMessages,
-                {role: 'system', content: messageBody},
+                {role: 'system', content: responseMessage},
               ]);
 
               conversation.push({ role: "assistant", content: messageBody });

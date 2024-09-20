@@ -12,6 +12,8 @@ const updateStock = async (userId) => {
             throw new Error('Usuario no encontrado.');
         }
 
+        console.log(user);
+
         // Verificar que el pedido exista y tenga ítems
         if (!user.lastOrderToLink || !user.lastOrderToLink.items || user.lastOrderToLink.items.length === 0) {
             throw new Error('No hay ítems en el último pedido.');
@@ -19,12 +21,12 @@ const updateStock = async (userId) => {
 
         // Iterar sobre los ítems del pedido y actualizar el stock
         for (const item of user.lastOrderToLink.items) {
-            const { name, quantity } = item;
+            const { productName, quantity } = item;
 
             // Encontrar el ítem en la colección de stock
-            const stockItem = await Item.findOne({ product_name: name });
+            const stockItem = await Item.findOne({ product_name: productName });
             if (!stockItem) {
-                throw new Error(`El ítem ${name} no se encuentra en el stock.`);
+                throw new Error(`El ítem ${productName} no se encuentra en el stock.`);
             }
 
             // Descontar la cantidad del stock

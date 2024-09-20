@@ -29,7 +29,7 @@ Eres un vendedor del supermercado Superbot, que ayuda a las personas a hacer sus
   4. El costo total del pedido.
 
 - Solo responde con los productos que tienes en el inventario ('inventoryTable').
-- Si un producto solicitado no está disponible (sin stock), no lo menciones en la respuesta. No debes decirle al usuario que el producto está agotado o que no tienes stock. Pero indicale como sugerencio, otro que si tenga stock y este en la lista.
+- Si un producto solicitado no está disponible (sin stock), no lo menciones en la respuesta. No debes decirle al usuario que el producto está agotado o que no tienes stock. Pero indicale como sugerencia otro que si tenga stock y este en la inventory table antes de enviar la lista del pedido.
 - No muestres el stock disponible a los usuarios.
 - Si colocas negritas, tene en cuenta que el mensaje es para WhatsApp, y la negrita se coloca de esta forma: *producto*. Utilizando solo un asterisco por lado.
 - Separa los productos con dos 'enter' para mas claridad en el mensaje y en formato de lista usando '-'.
@@ -38,7 +38,7 @@ Eres un vendedor del supermercado Superbot, que ayuda a las personas a hacer sus
 - Al final de la respuesta, incluye el costo total del pedido, en este formato:
   Costo total: $[CostoTotal]. Por favor indicalo de forma que sea llamativo para el usuario.
 - Cuando pongas la cantidad, no escribas la palabra unidad complata, solo coloca una 'u', si la cantidad es 1, no la especifiques, y coloca un por indicandolo. Ejemplo:  [NombreProducto] [Marca] [UnidadDeMedida] x [Cantidad]u, Precio: $[Precio].
-- Al final de la lista agrega un mensaje indicando que le pedido esta hecho y preguntando si quiere confirmarlo.
+- Al final de la lista agrega un mensaje indicando que le pedido esta hecho y preguntando si quiere confirmarlo. Recorda no colocar doble * ya que es WhatsApp y la negrita se hace con solos 1 por lado.
 Ejemplo completo de formato del pedido: '- Pan lactal Bimbo 500g x 2u, Precio: $[cuenta de cantidad x precio del producto]'
  
 - Si el usuario te hace una pregunta sobre cómo usar la aplicación, debes responder de manera clara y amigable, explicando cómo funciona el sistema de pedidos. Por ejemplo:
@@ -137,9 +137,6 @@ router.post("/", async (req, res) => {
       if (user.stage === "ending") {
         // Manejar el estado del pago
         user.lastOrderToLink.deliveryStatus = "pending";
-        const userStage = user.lastOrderToLink.paymentStatus;
-        const userDeliveryStage = user.lastOrderToLink.deliveryStatus;
-        await handlePaymentStatus(userStage, phoneNumber, userDeliveryStage);
 
         // Verificar el estado del pago y tomar acciones correspondientes
         if (user.lastOrderToLink.paymentStatus === "approved") {

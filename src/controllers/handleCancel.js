@@ -3,6 +3,7 @@ const client = require("twilio")(
   process.env.TWILIO_AUTH_TOKEN
 );
 const { getChatGPTResponse } = require("../config/openaiClient.js");
+const User = require('../models/User.js');
 
 const cancelPrompt = `
 Clasifica la intencion de este mensaje, teniendo en cuenta esta clasificacion.
@@ -37,7 +38,17 @@ async function handleCancel(user, phoneNumber, Body) {
     });
 
     conversation.push({ role: "assistant", content: responseMessage });
-    user.stage("welcome");
+    
+    try {
+      const result = await User.updateOne(
+        { phoneNumber: phoneNumber },
+        { $set: { lastOrderToLink: {}, conversation: [] } }
+      );
+      console.log("LastOrder limpiado:", result);
+    } catch (error) {
+      console.error("Error al limpiar lastOrder:", error);
+    }
+    user.stage = 'welcome';
     await user.save();
   } else {
     const conversationMessages = conversation.map((msg) => ({
@@ -57,7 +68,7 @@ async function handleCancel(user, phoneNumber, Body) {
     });
 
     conversation.push({ role: "assistant", content: responseMessage });
-    user.stage("confirm_or_modify");
+    user.stage = "confirm_or_modify";
     await user.save();
   }
 }
