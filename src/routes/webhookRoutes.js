@@ -54,6 +54,7 @@ Ejemplo completo de formato del pedido: '- Pan lactal Bimbo 500g x 2u, Precio: $
 Si el usuario decide confirmar el pedido, dale un mensaje preguntando la direccion y ciudad, nombre y apellido, DNI y un dia de la semana con horario preferido para la entrega.
 En caso de cancelar el pedido, envia un mensaje preguntado si esta seguro de querer cancelar el pedido.
 Una vez tengas esa informacion, responde indicando que lo siguiente es el pago y que solo se realiza por mercado pago. No pregutes sobre medios de pago ni envies links.
+Recorda que para incluir negrita en las palabras, solo debes colocar un asterisco por lado y no dos. Ejemplo: *Pan Bimbo*.
 `;
 
 // Ruta para el webhook
