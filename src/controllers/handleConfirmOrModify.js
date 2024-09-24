@@ -8,7 +8,7 @@ const handleModifying = require("../controllers/handleModifying.js");
 async function handleConfirmOrModify(user, phoneNumber, Body) {
   try {
     const modifyOrConfirmPrompt = `
-        Clasifica la intencion de este mensaje, teniendo en cuenta esta clasificacion.
+        Clasifica la intencion de este mensaje, teniendo en cuenta esta clasificacion y el contexto de la conversacion.
          1. Modificar.
          2. Confirmar.
          3. Cancelar.
@@ -17,17 +17,23 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
         Se lo mas criterioso posible porque depende de tu interpretacion la continuacion de un flujo de programacion.
         En el caso de que el mensaje contenga alguna pregunto acerca de como realizar modificaciones o algo por el estilo, responde 'modificar' de igual manera.
         Asegurate de responder con cancelar solo cuando la intecion sea muy clara y se mencione la palabra cancelar.
-        Responde solamente con la palabra 'modificar', con 'confirmar', o con 'cancelar'.`;
+        Tene en cuenta que para confirmar el pedido, puede usar expresiones u oraciones. Por ejemplo: "Asi esta bien" o "Si, asi esta bien".
+        Responde solamente con la palabra 'modificar', con 'confirmar', o con 'cancelar'. El mensaaje es este: ${Body}`;
 
     const conversation = user.conversation;
-    // Asegúrate de esperar el resultado de OpenAI con await
-    const modifyOrConfirmResponse = await getChatGPTResponse([
-      { role: "system", content: modifyOrConfirmPrompt },
-      { role: "user", content: Body },
-    ]);
-    console.log(modifyOrConfirmResponse);
 
-    if (modifyOrConfirmResponse.toLowerCase().trim() === "confirmar") {
+    const conversationMessagesPrompt = conversation.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+    responseMessagePrompt = await getChatGPTResponse([
+      ...conversationMessagesPrompt,
+      { role: "system", content: modifyOrConfirmPrompt },
+    ]);
+    console.log("Respuesta:", responseMessagePrompt);
+    // Asegúrate de esperar el resultado de OpenAI con await
+
+    if (responseMessagePrompt.toLowerCase().trim() === "confirmar") {
       try {
         const conversationMessages = conversation.map((msg) => ({
           role: msg.role,
@@ -69,12 +75,12 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
           to: phoneNumber,
         });
       }
-    } else if (modifyOrConfirmResponse.trim().toLowerCase() === "modificar") {
+    } else if (responseMessagePrompt.trim().toLowerCase() === "modificar") {
       await handleModifying(user, phoneNumber, Body);
       return;
-    } else if (modifyOrConfirmResponse.trim().toLowerCase() === "cancelar") {
+    } else if (responseMessagePrompt.trim().toLowerCase() === "cancelar") {
       try {
-        console.log(modifyOrConfirmResponse)
+        console.log(responseMessagePrompt)
         const conversationMessages = conversation.map((msg) => ({
           role: msg.role,
           content: msg.content,

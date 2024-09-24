@@ -9,6 +9,8 @@ const transformOrder = (order) => {
         unit_price: item.pricePerUnit
     }));
 
+    console.log("Mapeo de items dentro del link: ",items);
+
     return {
         items,
         deliveryDetails: order.deliveryDetails,

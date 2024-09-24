@@ -22,7 +22,7 @@ async function handleOrder(user, phoneNumber, openAIResponse, Body) {
     const matches = itemData.match(/^(.+?)(?:\s\d+.*)?$/);
 
     if (!matches) {
-      itemList.push(`${itemData}: Formato no válido o datos no especificados`);
+      itemList.push({ name: `${itemData}`, error: "Formato no válido o datos no especificados" });
       continue;
     }
 
@@ -37,18 +37,21 @@ async function handleOrder(user, phoneNumber, openAIResponse, Body) {
       });
 
       if (items.length === 0) {
-        itemList.push(`${itemName}: No se encontraron productos`);
+        itemList.push({ name: itemName, error: "No se encontraron productos" });
         continue;
       }
 
       for (const item of items) {
         // Revisar si el producto ya está en la lista
         const existingItem = itemList.find(
-          (i) => i.name === item.product_name
+          (i) => i.name && item.product_name && i.name.toLowerCase() === item.product_name.toLowerCase()
         );
 
-        if (!existingItem) {
-          // Si el producto no está en la lista, añádelo
+        if (existingItem) {
+          // Si el producto ya está en la lista, incrementar la cantidad
+          existingItem.quantity += 1; // O ajusta según sea necesario
+        } else {
+          // Si el producto no está en la lista, añádelo como un nuevo ítem
           const itemPrice = convertPrice(item.price);
           itemList.push({
             name: item.product_name,
@@ -56,15 +59,15 @@ async function handleOrder(user, phoneNumber, openAIResponse, Body) {
             stock: item.stock,
             brand: item.brand,
             description: item.description,
-            quantity: item.quantity || 1, // Puedes ajustar la cantidad inicial
+            quantity: item.quantity, 
           });
         }
-        // Si el producto ya está en la lista, no hacer nada, solo dejarlo
       }
     } catch (error) {
-      itemList.push(
-        `${itemName}: Error al procesar el producto: ${error.message}`
-      );
+      itemList.push({
+        name: itemName,
+        error: `Error al procesar el producto: ${error.message}`,
+      });
       console.error(`Error al procesar el producto ${itemName}:`, error);
     }
   }
@@ -72,8 +75,8 @@ async function handleOrder(user, phoneNumber, openAIResponse, Body) {
   // Convertir la lista a un formato legible para la IA
   const formattedList = itemList
     .map((item) => {
-      if (typeof item === "string") {
-        return item;
+      if (item.error) {
+        return `${item.name}: ${item.error}`;
       } else {
         return `Nombre: ${item.name}, Precio: $${item.price}, Stock: ${item.stock}, Marca: ${item.brand}, Descripción: ${item.description}, Cantidad: ${item.quantity}`;
       }
@@ -103,7 +106,7 @@ async function handleOrder(user, phoneNumber, openAIResponse, Body) {
   // Actualizar la conversación con la respuesta de la IA
   user.conversation.push({ role: "assistant", content: responseMessage });
 
-  // Actualizar la lista de productos en lastOrder
+  // Actualizar la lista de productos en lastOrder, asegurando que se guarde la lista completa
   user.lastOrder = { items: itemList };
   user.stage = "confirm_or_modify";
   await user.save();
@@ -117,3 +120,4 @@ async function handleOrder(user, phoneNumber, openAIResponse, Body) {
 }
 
 module.exports = handleOrder;
+

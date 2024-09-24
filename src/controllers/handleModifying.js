@@ -2,7 +2,7 @@ const client = require("twilio")(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
-const { convertPrice } = require("../utils/converPrice.js");
+
 const { getChatGPTResponse } = require("../config/openaiClient.js");
 const handleOrder = require("../controllers/handleOrder.js");
 const Item = require("../models/item.js");

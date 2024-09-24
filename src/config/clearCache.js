@@ -13,10 +13,11 @@ async function clearUserCache(phoneNumber) {
         }
         user.conversation = [];
         user.stage = 'welcome'; 
-        user.lastOrder = {
+        user.lastOrder = { items: []},
+        user.lastOrderToLink = {
             items: [],
             paymentId: null,
-            paymentStatus: null
+            paymentStatus: null,
         };
         user.deliveryDetails = '';
         await user.save();

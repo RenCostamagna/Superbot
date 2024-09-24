@@ -14,6 +14,7 @@ Tienes que identificar lo siguiente:
     2. Nombre de la persona que realiza el pedido.
     3. DNI de la persona.
     4. Dia y hora favorita que eligio para el mismo.
+Tene en cuenta que hay calles que tienen nombres de personas.
 Tu respuesta tiene que estar dad en este formato: Direccion (incluyendo ciudad y codigo postal), nombre de la persona, DNI, dia y hora. 
 Si el dia y hora esta dado como oracion, devolve solo el dia y la hora. Por ejemplo: "lunes a las 15hs", tu respuesta: "lunes 15:00".
 Si el dia es miercoles, asegurate de devolverlo con el acento correspondiente. 
@@ -23,7 +24,6 @@ Elimina el "hs" al final de la hora y no agregues puntos al final ni informacion
 async function deliveryDetails(user, phoneNumber, Body) {
   const conversation = user.conversation;
   console.log('Delivery conversation: ', conversation);
-
   try {
     const openAIResponse = await getChatGPTResponse([
       { role: "system", content: `${deliveryPrompt}, El mensaje es este: ${Body}` },

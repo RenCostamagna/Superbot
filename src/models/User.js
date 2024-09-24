@@ -5,6 +5,11 @@ const userSchema = new mongoose.Schema({
   conversation: Array,
   stage: String,
   deliveryDetails: String,
+  lastOrder: {
+    items: [
+
+    ]
+  },
   lastOrderToLink: {
     items: [
       {

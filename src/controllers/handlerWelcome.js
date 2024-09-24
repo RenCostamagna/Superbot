@@ -7,9 +7,13 @@ const { getChatGPTResponse } = require("../config/openaiClient.js");
 const handleOrder = require("./handleOrder.js");
 const User = require("../models/User.js");
 
-const promptPedido = `Captura solo los nombres de los productos que se mencionan en el mensaje. No incluyas cantidades, descripciones, unidades de medida o marcas. Solo proporciona los nombres de los productos en singular, corregidos ortográficamente, y separados por comas, con la primera letra de cada nombre en mayúsculas. No agregues información adicional.
+const promptPedido = `Captura solo los nombres de los productos que se mencionan en el mensaje. 
+No incluyas cantidades, descripciones, unidades de medida o marcas. 
+Solo proporciona los nombres de los productos en singular, y separados por comas, con la primera letra de cada nombre en mayúsculas. No agregues información adicional.
+Corrigelos ortograficamente, agregando acentos y tildes correspondientes.
 
 Ejemplos de cómo debes responder:
+- Para el mensaje "quiero saber que leche tenes disponible", tu respuesta debe ser: Leche.
 - Para el mensaje "quiero comprar un aceite, dos coca colas y 1kg de chorizo", tu respuesta debe ser: Aceite, Coca Cola, Chorizo.
 - Para el mensaje "aceite natura de 1L", tu respuesta debe ser: Aceite.
 - Para el mensaje "dos vino tinto navarro correas de 750ml", tu respuesta debe ser: Vino tinto.
@@ -19,7 +23,14 @@ Ejemplos de cómo debes responder:
 
 async function welcomeFlow(user, phoneNumber, Body) {
   // Define el prompt para clasificar la intención
-  const welcomePrompt = `Clasifica la intención del siguiente mensaje en una de las dos categorias, tene en cuenta las preguntas acerca de como se hace para comprar. Tene en cuenta que la lista de compra puede estar dada en cualquier formato. Si la pregunta es de tipo: "Hola! Quiero realizar un pedido" o "Quiero comprar", se considera saludo o pregunta ya que no contiene productos:\n1. Pedido.\n2. Saludo o pregunta sobre cómo usar la aplicación.\n Responde solamente con "pedido" en caso de serlo o con "saludo o pregunta"\n\nMensaje:\n${Body}`;
+  const welcomePrompt = `Clasifica la intención del siguiente mensaje en una de las dos categorías. Ten en cuenta las siguientes pautas:
+
+  Si el mensaje menciona productos específicos o consultas relacionadas con productos, como en "Quiero saber el precio de la leche" o "Me gustaría saber qué tipos de harina tienes", se considera un pedido.
+  Si el mensaje expresa una intención de compra mencionando un producto específico, como en "Quiero comprar yogurt", se considera un pedido.
+  Si el mensaje es un saludo general o una pregunta sobre cómo usar la aplicación, como en "Hola, quiero hacer un pedido" o "¿Cómo compro?", se considera un saludo o pregunta sobre cómo usar la aplicación.
+  Responde solo con "pedido" si es un pedido o con "saludo o pregunta" en los demás casos.
+  
+  Mensaje: ${Body};`
 
   // Recupera la conversación del usuario
   let users = await User.findOne({ phoneNumber });

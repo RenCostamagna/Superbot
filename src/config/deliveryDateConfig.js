@@ -1,11 +1,13 @@
 
 function obtenerProximaSemana(diaYHora) {
+        console.log(diaYHora)
         // Separar el día de la semana de la hora usando un espacio como delimitador
         const [diaSemana, hora] = diaYHora.split(' ');
         // Crear una nueva fecha con el día actual
         const hoy = new Date();
         // Obtener el número del día de la semana (0 = Domingo, 1 = Lunes, ..., 6 = Sábado)
         const diaActual = hoy.getDay();
+        console.log(diaSemana, hora);
         
         // Mapa para convertir los nombres de días a números de 0 a 6
         const dias = {

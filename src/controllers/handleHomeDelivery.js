@@ -79,6 +79,7 @@ async function handleHomeDelivery(user, phoneNumber, Body) {
         { role: "user", content: Body },
         { role: "assistant", content: responseMessage }
       );
+      await userStatus.save();
 
       await client.messages.create({
         body: responseMessage,
