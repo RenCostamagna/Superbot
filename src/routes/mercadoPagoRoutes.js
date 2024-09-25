@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router();
 const { MercadoPagoConfig } = require('mercadopago');
+require("dotenv").config();
 
 const client = new MercadoPagoConfig({ accessToken: 'TEST-6235347846124389-091109-7d711dac37e885b86ab061148167e17f-435553967'  } );
 

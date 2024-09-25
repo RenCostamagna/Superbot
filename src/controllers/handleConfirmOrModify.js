@@ -7,6 +7,9 @@ const handleModifying = require("../controllers/handleModifying.js");
 
 async function handleConfirmOrModify(user, phoneNumber, Body) {
   try {
+
+    let responseMessage;
+
     const modifyOrConfirmPrompt = `
         Clasifica la intencion de este mensaje, teniendo en cuenta esta clasificacion y el contexto de la conversacion.
          1. Modificar.
@@ -14,8 +17,10 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
          3. Cancelar.
         El mensaje que vas a tener que identificar, puede ser una oracion o simplemente la palabra.
         Identifica bien las oraciones que se encargan de confirmar la seleccion de un producto en particular, con las de confirmacion del pedido.
+        Tene en cuenta que la persona puede querer confirmar una seleccion de un producto en particular que se le brindo anteriormente, no confirmes el pedido si se da eso.
         Se lo mas criterioso posible porque depende de tu interpretacion la continuacion de un flujo de programacion.
         En el caso de que el mensaje contenga alguna pregunto acerca de como realizar modificaciones o algo por el estilo, responde 'modificar' de igual manera.
+        Tene en cuenta que la persona puede escribir con respecto a mensajes anteriores. Analiza muy bien al conversacion para tener en cuenta eso. No confirmes el pedido si el mensaje es una respuesta a pregunta anterior.
         Asegurate de responder con cancelar solo cuando la intecion sea muy clara y se mencione la palabra cancelar.
         Tene en cuenta que para confirmar el pedido, puede usar expresiones u oraciones. Por ejemplo: "Asi esta bien" o "Si, asi esta bien".
         Responde solamente con la palabra 'modificar', con 'confirmar', o con 'cancelar'. El mensaaje es este: ${Body}`;
@@ -26,7 +31,7 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
       role: msg.role,
       content: msg.content,
     }));
-    responseMessagePrompt = await getChatGPTResponse([
+    const responseMessagePrompt = await getChatGPTResponse([
       ...conversationMessagesPrompt,
       { role: "system", content: modifyOrConfirmPrompt },
     ]);
@@ -44,7 +49,6 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
           { role: "user", content: Body },
         ]);
         console.log("Respuesta a confirmacion:", responseMessage);
-        console.log(conversation);
 
         try {
           // Envía el mensaje de confirmación de pedido
@@ -76,11 +80,32 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
         });
       }
     } else if (responseMessagePrompt.trim().toLowerCase() === "modificar") {
-      await handleModifying(user, phoneNumber, Body);
-      return;
+
+      const conversationMessages = conversation.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+      responseMessage = await getChatGPTResponse([
+        ...conversationMessages,
+        { role: "user", content: Body },
+      ]);
+      console.log("Respuesta de saludo o pregunta:", responseMessage);
+
+      conversation.push(
+        { role: "user", content: Body },
+        { role: "assistant", content: responseMessage }
+      );
+      user.stage = 'confirm_or_modify';
+      await user.save();
+
+      await client.messages.create({
+        body: responseMessage,
+        from: process.env.TWILIO_WHATSAPP_NUMBER,
+        to: phoneNumber,
+      });
     } else if (responseMessagePrompt.trim().toLowerCase() === "cancelar") {
       try {
-        console.log(responseMessagePrompt)
+        console.log(responseMessagePrompt);
         const conversationMessages = conversation.map((msg) => ({
           role: msg.role,
           content: msg.content,

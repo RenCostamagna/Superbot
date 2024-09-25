@@ -41,6 +41,7 @@ const userSchema = new mongoose.Schema({
       deliveryDetails: String,
       paymentStatus: String,
       shippingStatus: String,
+      paymentID: String
     },
   ],
 });

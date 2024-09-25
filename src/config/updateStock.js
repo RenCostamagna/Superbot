@@ -24,7 +24,7 @@ const updateStock = async (userId) => {
             const { productName, quantity } = item;
 
             // Encontrar el ítem en la colección de stock
-            const stockItem = await Item.findOne({ product_name: productName });
+            const stockItem = await Item.findOne({ PRODUCTO: productName });
             if (!stockItem) {
                 throw new Error(`El ítem ${productName} no se encuentra en el stock.`);
             }

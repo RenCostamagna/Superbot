@@ -7,17 +7,17 @@ const { getChatGPTResponse } = require("../config/openaiClient.js");
 const User = require("../models/User");
 
 const mapPrompt = `
-  En base a la lista que tienes, de productos con sus cantidades y precios. Y al final, en la ultima linea, el total. Quiero que la transformes en el siguiente formato:
+  En base a la lista de pedido que tenes, de productos con sus cantidades y precios. Y al final, en la ultima linea, el total. Quiero que la transformes en el siguiente formato:
   
   - Nombre del producto, marca,peso o volumen,cantidad,precio unitario
   - Total: total
   
   Ejemplo:
-  Pan lactal,Bimbo,500g,2,550.00
-  Yogur bebible con cereales,Yogurísimo,200ml,6,500.00
+  Alimento para perro,Pedigree,12kg,2,7000
+  Shampoo para gatos,Plusbelle,200ml,6,500.00
   Total: $[total]
   
-  Asegúrate de mantener el formato exacto en cada línea, sin agregar puntos al final ni un guion adelante.
+  Asegúrate de mantener el formato exacto en cada línea. No agregues el guion delante del articulo.
   `;
 
 const handlePayment = async (phoneNumber) => {
@@ -47,41 +47,41 @@ const handlePayment = async (phoneNumber) => {
   if (!productsPart || !totalPart) {
     throw new Error("Formato de respuesta de ChatGPT incorrecto.");
   }
-
+  
   console.log("Parte de productos:", productsPart.trim());
   console.log("Parte del total:", totalPart.trim());
-
+  
   // Filtrar y procesar las líneas de productos
   const productLines = productsPart
     .trim()
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith("-")) // Filtrar líneas vacías y líneas que comienzan con guiones
+    .filter((line) => line.length > 0) // Solo filtrar líneas vacías
     .map((line) => line.replace(/^-*\s*/, "").trim()); // Eliminar guion y espacios al inicio
-
+  
   console.log("Líneas de productos después del procesamiento:", productLines);
-
+  
   const products = productLines.map((line) => {
     // Separa los componentes por comas
     const [productName, brand, weightOrVolume, quantity, pricePerUnit] = line
       .split(",")
       .map((item) => item.trim());
-
+  
     console.log("Procesando línea:", line); // Verificar cada línea procesada
-
+  
+    // Comprobar si hay datos faltantes
     if (!productName || !brand || !weightOrVolume || !quantity || !pricePerUnit) {
       throw new Error(`Datos faltantes en la línea: ${line}`);
     }
-
+  
     const quantityNumber = parseInt(quantity, 10);
-    const pricePerUnitNumber = parseFloat(pricePerUnit);
-
+    const pricePerUnitNumber = parseFloat(pricePerUnit.replace('$', '').replace('.', '').replace(',', '.')); // Ajustar el formato de precio
+  
+    // Validar cantidad y precio
     if (isNaN(quantityNumber) || isNaN(pricePerUnitNumber)) {
-      throw new Error(
-        `Cantidad o precio no válido para el producto ${productName}`
-      );
+      throw new Error(`Cantidad o precio no válido para el producto ${productName}`);
     }
-
+  
     return {
       productName,
       brand, // Guardar la marca por separado
@@ -91,8 +91,10 @@ const handlePayment = async (phoneNumber) => {
       totalPrice: quantityNumber * pricePerUnitNumber,
     };
   });
-
+  
+  // Imprimir la lista de productos procesados
   console.log("Productos procesados:", products);
+  
 
   const total = parseFloat(totalPart.trim().replace("$", "").replace(",", ""));
   if (isNaN(total)) {
