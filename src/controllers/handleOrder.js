@@ -1,75 +1,42 @@
-const client = require("twilio")(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-const { getChatGPTResponse } = require("../config/openaiClient.js");
 const { convertPrice } = require("../utils/converPrice.js");
 const Item = require("../models/item.js");
 
-async function handleOrder(user, phoneNumber, openAIResponse, Body) {
-  // Divide la respuesta en ítems individuales y limpia los espacios
-  const interpretedItems = openAIResponse
-    .trim()
-    .split(",")
-    .map((item) => item.trim());
-  console.log("Interpreted Items:", interpretedItems);
+async function handleOrder() {
+  const itemList = [];  // Definir la lista de productos
 
-  const conversation = user.conversation;
-  let itemList = user.lastOrder?.items || []; // Usar la lista anterior si existe
+  try {
+    // Buscar todos los productos en la base de datos
+    const items = await Item.find({});
 
-  for (const itemData of interpretedItems) {
-    // Ajusta la expresión regular para capturar solo el nombre del producto
-    const matches = itemData.match(/^(.+?)(?:\s\d+.*)?$/);
+    if (items.length === 0) {
+      itemList.push({ name: "No hay productos disponibles", error: "No se encontraron productos en la base de datos" });
+    } else {
+      // Iterar sobre los productos encontrados
+      items.forEach((item) => {
+        const itemsPrice = convertPrice(item.PRECIO);
 
-    if (!matches) {
-      itemList.push({ name: `${itemData}`, error: "Formato no válido o datos no especificados" });
-      continue;
-    }
-
-    let itemName = matches[1].trim();
-    itemName = itemName.replace(/\.$/, ""); // Eliminar puntos al final del nombre del producto
-    console.log(`Buscando producto: ${itemName}`);
-
-    try {
-      // Buscar productos en la base de datos por coincidencia parcial en el nombre
-      const items = await Item.find({
-        product_name: { $regex: new RegExp(itemName, "i") },
+        itemList.push({
+          name: item.PRODUCTO,
+          price: itemsPrice.toFixed(2),
+          category: item.CATEGORIA,
+          format: item.Formato,
+          paraQueSirve: item.Para_que_sirve,
+          stock: item.Stock,
+          brand: item.MARCA,
+          edadAnimal: item.Edad_del_Animal,
+          cuantoTrae: item.Cuanto_trae,
+          tamanoAnimal: item.Tamaño_del_Animal,
+          proteinasBrutas: item.Cantidad_de_Proteina_bruta,
+          fechaDeVencimiento: item.Fecha_de_Vencimiento,
+        });
       });
-
-      if (items.length === 0) {
-        itemList.push({ name: itemName, error: "No se encontraron productos" });
-        continue;
-      }
-
-      for (const item of items) {
-        // Revisar si el producto ya está en la lista
-        const existingItem = itemList.find(
-          (i) => i.name && item.product_name && i.name.toLowerCase() === item.product_name.toLowerCase()
-        );
-
-        if (existingItem) {
-          // Si el producto ya está en la lista, incrementar la cantidad
-          existingItem.quantity += 1; // O ajusta según sea necesario
-        } else {
-          // Si el producto no está en la lista, añádelo como un nuevo ítem
-          const itemPrice = convertPrice(item.price);
-          itemList.push({
-            name: item.product_name,
-            price: itemPrice.toFixed(2),
-            stock: item.stock,
-            brand: item.brand,
-            description: item.description,
-            quantity: item.quantity, 
-          });
-        }
-      }
-    } catch (error) {
-      itemList.push({
-        name: itemName,
-        error: `Error al procesar el producto: ${error.message}`,
-      });
-      console.error(`Error al procesar el producto ${itemName}:`, error);
     }
+  } catch (error) {
+    itemList.push({
+      name: "Error en la base de datos",
+      error: `Error al procesar los productos: ${error.message}`,
+    });
+    console.error("Error al procesar los productos:", error);
   }
 
   // Convertir la lista a un formato legible para la IA
@@ -78,46 +45,15 @@ async function handleOrder(user, phoneNumber, openAIResponse, Body) {
       if (item.error) {
         return `${item.name}: ${item.error}`;
       } else {
-        return `Nombre: ${item.name}, Precio: $${item.price}, Stock: ${item.stock}, Marca: ${item.brand}, Descripción: ${item.description}, Cantidad: ${item.quantity}`;
+        return `Nombre: ${item.name}, Precio: $${item.price}, Formato: ${item.format}, Para qué sirve: ${item.paraQueSirve}, Stock: ${item.stock}, Marca: ${item.brand}, Tamaño del animal: ${item.tamanoAnimal}, Cuánto trae: ${item.cuantoTrae}, Categoría: ${item.category}, Edad del animal: ${item.edadAnimal}, Proteínas brutas: ${item.proteinasBrutas}, Fecha de vencimiento: ${item.fechaDeVencimiento}`;
       }
     })
-    .join(", ");
+    .join("\n\n");
 
   // Mostrar la lista formateada
   console.log("Lista legible para la IA:", formattedList);
 
-  conversation.push({
-    role: "system",
-    content: `Esta es la tabla de inventario: ${formattedList}`,
-  });
-
-  const conversationMessages = conversation.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-  }));
-  const responseMessage = await getChatGPTResponse([
-    ...conversationMessages,
-    { role: "user", content: Body },
-  ]);
-  console.log("Respuesta de saludo o pregunta:", responseMessage);
-
-  conversation.push({ role: "user", content: Body });
-
-  // Actualizar la conversación con la respuesta de la IA
-  user.conversation.push({ role: "assistant", content: responseMessage });
-
-  // Actualizar la lista de productos en lastOrder, asegurando que se guarde la lista completa
-  user.lastOrder = { items: itemList };
-  user.stage = "confirm_or_modify";
-  await user.save();
-
-  // Enviar mensaje de confirmación al usuario
-  await client.messages.create({
-    body: responseMessage,
-    from: process.env.TWILIO_WHATSAPP_NUMBER,
-    to: phoneNumber,
-  });
+  return formattedList;  // Devolver la lista formateada para el uso futuro
 }
 
 module.exports = handleOrder;
-

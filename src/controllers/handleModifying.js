@@ -59,7 +59,7 @@ async function handleModifying(user, phoneNumber, Body) {
       role: msg.role,
       content: msg.content,
     }));
-    responseMessage = await getChatGPTResponse([
+    const responseMessage = await getChatGPTResponse([
       ...conversationMessages,
       { role: "user", content: Body },
     ]);

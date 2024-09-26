@@ -18,7 +18,8 @@ const updateOrderHistory = async (user) => {
             paymentStatus: user.lastOrderToLink.paymentStatus,
             orderDate: new Date(),
             shippingStatus: user.lastOrderToLink.deliveryStatus,
-            conversation: user.conversation
+            conversation: user.conversation,
+            paymentID: user.lastOrderToLink.paymentID
         };
 
         // Agregar la nueva orden al historial de órdenes
