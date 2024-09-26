@@ -1,12 +1,9 @@
 const { MercadoPagoConfig, Preference } = require("mercadopago");
-const mongoose = require("mongoose");
-require("dotenv").config();
 const { transformOrder } = require("../config/orderConfig.js");
-const express = require("express");
-const router = express.Router();
-const User = require("../models/User");
-const Payment = require("../models/payment");
-const handlePaymentStatus = require("../controllers/handlePaymentStatus.js");
+const nodemailer = require("nodemailer"); 
+const mongoose = require("mongoose");
+
+require("dotenv").config();
 
 const client = new MercadoPagoConfig({
   accessToken: 'TEST-6235347846124389-091109-7d711dac37e885b86ab061148167e17f-435553967',
@@ -29,124 +26,77 @@ const createPaymentLink = async (order, userId) => {
 
     back_urls: {
       failure:
-        "https://3fff-2803-9800-98ca-851e-b9cf-43f4-aac9-299e.ngrok-free.app/webhook",
+        process.env.MERCADOPAGO_STATUS_URL,
       success:
-        "https://3fff-2803-9800-98ca-851e-b9cf-43f4-aac9-299e.ngrok-free.app/webhook",
+        process.env.MERCADOPAGO_STATUS_URL,
       pending:
-        "https://3fff-2803-9800-98ca-851e-b9cf-43f4-aac9-299e.ngrok-free.app/webhook",
+        process.env.MERCADOPAGO_STATUS_URL,
     },
     autoreturn: "approved",
-    notifcation_url:
-      "https://3fff-2803-9800-98ca-851e-b9cf-43f4-aac9-299e.ngrok-free.app/mercadopago/mercadopago-webhook",
+    notification_url: process.env.MERCADOPAGO_WEBHOOK_URL,
     metadata: { userId: userId },
   };
 
-  const payment = new Preference(client);
-  const result = await payment.create({ body });
-  const link = result.sandbox_init_point;
-  if (link) {
-    console.log("Link de pago:", link);
-    return link;
-  } else {
-    throw new Error("El enlace de pago no se generó correctamente");
+  try {
+    const payment = new Preference(client);
+    const result = await payment.create({ body });
+    const link = result.sandbox_init_point;
+    if (link) {
+      console.log("Link de pago generado:", link);
+      return link;
+    } else {
+      throw new Error("El enlace de pago no se generó correctamente");
+    }
+  } catch (error) {
+    console.error("Error al crear el enlace de pago:", error);
+    throw error;
   }
 };
 
-router.post("/mercadopago-webhook", async (req, res) => {
-  const { type, data } = req.body;
 
-  if (type === "payment") {
-    const paymentId = data.id;
-    console.log("Payment ID recibido:", paymentId);
+// Función para enviar el correo de notificación de nuevo pedido
+const sendNewOrderEmail = async (user, order) => {
+  let transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    secure: process.env.EMAIL_SECURE,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 
-    try {
-      const response = await fetch(
-        `https://api.mercadopago.com/v1/payments/${paymentId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer TEST-6235347846124389-091109-7d711dac37e885b86ab061148167e17f-435553967`,
-          },
-        }
-      );
+  let productList = order.items.map(item => {
+    const title = item.title || 'Título no disponible';
+    const quantity = item.quantity || 'Cantidad no disponible';
+    const unit_price = item.unit_price || 'Precio no disponible';
+    return `${title} - Cantidad: ${quantity} - Precio unitario: $${unit_price}`;
+  }).join('\n');
 
-      if (response.ok) {
-        const payment = await response.json();
-        const userId = payment.metadata.user_id;
-        //const userId = mongoose.Types.ObjectId(userIdConverter)
-        console.log("Detalles del pago:", payment);
+  let mailOptions = {
+    from: '"Sistema de Pedidos" <noreply@tutienda.com>',
+    to: process.env.COMPANY_EMAIL,
+    subject: "Nuevo pedido registrado",
+    text: `
+      Se ha registrado un nuevo pedido:
 
-        console.log("userIdConverter:", payment.metadata);
-        console.log("Tipo de userIdConverter:", typeof userId);
+      Teléfono: ${user.phoneNumber}
 
-        const status = payment.status;
+      Detalles del pedido:
+      ${productList}
 
-        console.log(status);
-        await User.updateOne(
-          { _id: userId },
-          {
-            $set: {
-              "lastOrderToLink.paymentStatus": status,
-              "lastOrderToLink.paymentId": paymentId,
-              "lastOrderToLink.deliveryStatus": "pending",
-            },
-          }
-        );
+      Total: $${order.total}
 
-        const newPayment = new Payment({
-          paymentId,
-          userId: userId, // Asumimos que tienes este dato o que puedes relacionar al usuario
-          orderId: payment.order.id, // Asegúrate de pasar esta información en la transacción
-          amount: payment.transaction_amount,
-          currency: payment.currency_id,
-          paymentMethod: payment.payment_method.type,
-          paymentStatus: status,
-          transactionDate: payment.date_created || payment.date_approved,
-          payerEmail: payment.payer.email,
-          paymentGatewayResponse: payment, // Guardar toda la respuesta por si necesitas detalles adicionales
-        });
+      Por favor, procesa este pedido lo antes posible.
+    `,
+  };
 
-        await newPayment.save();
-        try {
-          const user = await User.findOne({
-            "lastOrderToLink.paymentId": paymentId,
-
-          });
-  
-        } catch (error) {
-          console.error("Error manejando el estado del pago:", error);
-        }
-
-        if (status === "approved") {
-          // Obtener el número de teléfono del usuario (debes ajustarlo según tu esquema)
-          const user = await User.findById(userId);
-          const phoneNumber = user.phoneNumber;
-
-          // Llamar a la función handlePaymentStatus para gestionar el envío automático del mensaje
-          await handlePaymentStatus(
-            status,
-            phoneNumber,
-            user.lastOrderToLink.deliveryStatus
-          );
-        }
-
-        // Responder que la petición fue procesada correctamente
-        res.sendStatus(200);
-      } else {
-        console.error(
-          "Error al obtener los detalles del pago:",
-          response.status,
-          await response.text()
-        );
-        res.sendStatus(500);
-      }
-    } catch (error) {
-      console.error("Error en el webhook de MercadoPago:", error);
-      res.sendStatus(500);
-    }
-  } else {
-    res.sendStatus(400); // Tipo no manejado
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Correo de notificación enviado a la empresa");
+  } catch (error) {
+    console.error("Error al enviar el correo de notificación:", error);
   }
-});
+};
 
-module.exports = { createPaymentLink, router };
+module.exports = { createPaymentLink, sendNewOrderEmail};

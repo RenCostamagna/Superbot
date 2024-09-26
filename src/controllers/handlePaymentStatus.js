@@ -7,22 +7,34 @@ const client = require("twilio")(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
+
 const handlePaymentStatus = async (status, phoneNumber, deliveryStatus) => {
   let messageBody;
   const user = await User.findOne({ phoneNumber });
+
+  if (!user) {
+    console.error(`No se encontró un usuario con el número de teléfono: ${phoneNumber}`);
+    return;
+  }
 
   const shipping = await Shipping.findOne({
     phoneNumber: phoneNumber,
     estado: deliveryStatus,
   });
-  console.log(shipping);
+
+  if (!shipping) {
+    console.error(`No se encontró información de envío para el usuario con el número de teléfono: ${phoneNumber} y estado de entrega: ${deliveryStatus}`);
+    return;
+  }
+
+  const diaYHoraEntrega = shipping.diaYHoraEntrega || "No especificado"; // Asegúrate de que no sea null
   const conversation = user.conversation;
 
   console.log(shipping);
   // Determinar el mensaje basado en el estado del pago
   switch (status) {
     case "approved":
-      responseMessage = `El pago del usuario se acredito. La entrega fue programada para el ${shipping.diaYHoraEntrega}. Direccion: ${shipping.direccionCompleta}. Genera un mensaje para esto. No agregues un saludo.`;
+      responseMessage = `El pago del usuario se acreditó. La entrega fue programada para el ${diaYHoraEntrega}. Dirección: ${shipping.direccionCompleta}. Genera un mensaje para esto. No agregues un saludo.`;
       const conversationMessages = conversation.map((msg) => ({
         role: msg.role,
         content: msg.content,
@@ -38,7 +50,6 @@ const handlePaymentStatus = async (status, phoneNumber, deliveryStatus) => {
       console.log(user.conversation);
 
       try {
-        if (user.stage === "ending") {
           // Manejar el estado del pago
           user.lastOrderToLink.deliveryStatus = "pending";
   
@@ -46,18 +57,15 @@ const handlePaymentStatus = async (status, phoneNumber, deliveryStatus) => {
           // Verificar el estado del pago y tomar acciones correspondientes
           if (user.lastOrderToLink.paymentStatus === "approved") {
             console.log(`Payment Status: ${user.lastOrderToLink.paymentStatus}`);
-            
+            await updateStock(user._id);
             // Cambiar el estado del usuario
             user.stage = "home_delivery";
             user.lastOrderToLink.paymentStatus = "accredited";
             await user.save();
           }
-        }
       } catch (error) {
         console.error("Error en el proceso de finalización del pedido:", error);
       }
-
-      await updateStock(user._id);
 
       break;
     case "pending":
@@ -70,7 +78,7 @@ const handlePaymentStatus = async (status, phoneNumber, deliveryStatus) => {
       messageBody = `El pago fue cancelado.`;
       break;
     default:
-      messageBody = `Una vez realizado, envie el mensaje: "pago"`;
+      messageBody = `Una vez realizado, envíe el mensaje: "pago"`;
       break;
   }
 
