@@ -8,17 +8,17 @@ const User = require("../models/User");
 require('dotenv').config();
 
 const mapPrompt = `
-  En base a la lista de pedido que tenes, de productos con sus cantidades y precios. Y al final, en la ultima linea, el total. Quiero que la transformes en el siguiente formato:
+  En base a la lista de pedido que tienes, de productos con sus cantidades y precios, y al final, en la última línea, el total. Quiero que la transformes en el siguiente formato:
   
-  - Nombre del producto, marca,peso o volumen,cantidad,precio unitario
+  - Nombre del producto completo (incluyendo todo lo que esté en el campo que tiene el nombre del producto), marca, peso o volumen, cantidad, precio unitario
   - Total: total
   
   Ejemplo:
-  Alimento para perro,Pedigree,12kg,2,7000
-  Shampoo para gatos,Plusbelle,200ml,6,500.00
+  BOCATTO Gato x 10kg, Pedigree, 12kg, 2, 7000
+  Shampoo para gatos, Plusbelle, 200ml, 6, 500
   Total: $[total]
   
-  Asegúrate de mantener el formato exacto en cada línea. No agregues el guion delante del articulo.
+  Asegúrate de mantener el formato exacto en cada línea. No agregues el guion delante del artículo.
   `;
 
 const handlePayment = async (phoneNumber) => {

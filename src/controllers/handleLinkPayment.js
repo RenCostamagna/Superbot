@@ -5,10 +5,12 @@ const mongoose = require("mongoose");
 
 require("dotenv").config();
 
+// Configuración del cliente de MercadoPago
 const client = new MercadoPagoConfig({
   accessToken: 'TEST-6235347846124389-091109-7d711dac37e885b86ab061148167e17f-435553967',
 });
 
+// Función para crear un enlace de pago
 const createPaymentLink = async (order, userId) => {
   if (!order || !order.lastOrderToLink) {
     throw new Error(
@@ -53,7 +55,6 @@ const createPaymentLink = async (order, userId) => {
   }
 };
 
-
 // Función para enviar el correo de notificación de nuevo pedido
 const sendNewOrderEmail = async (user, order) => {
   let transporter = nodemailer.createTransport({
@@ -66,10 +67,11 @@ const sendNewOrderEmail = async (user, order) => {
     },
   });
 
-  let productList = order.items.map(item => {
-    const title = item.title || 'Título no disponible';
+  let productList = user.lastOrderToLink.items.map(item => {
+    console.log("Item:", item); // Registro de depuración
+    const title = item.productName || 'Título no disponible';
     const quantity = item.quantity || 'Cantidad no disponible';
-    const unit_price = item.unit_price || 'Precio no disponible';
+    const unit_price = item.pricePerUnit || 'Precio no disponible';
     return `${title} - Cantidad: ${quantity} - Precio unitario: $${unit_price}`;
   }).join('\n');
 
@@ -99,4 +101,4 @@ const sendNewOrderEmail = async (user, order) => {
   }
 };
 
-module.exports = { createPaymentLink, sendNewOrderEmail};
+module.exports = { createPaymentLink, sendNewOrderEmail };

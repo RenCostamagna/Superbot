@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Item = require('../models/item.js');
-console.log('Ingreseo')
+console.log('Ingreso');
 
 const updateStock = async (userId) => {
     try {
         // Obtener el usuario con el último pedido
-        console.log(userId)
+        console.log(userId);
         const user = await User.findById(userId);
         if (!user) {
             throw new Error('Usuario no encontrado.');
@@ -22,18 +22,30 @@ const updateStock = async (userId) => {
         // Iterar sobre los ítems del pedido y actualizar el stock
         for (const item of user.lastOrderToLink.items) {
             const { productName, quantity } = item;
-
-            // Encontrar el ítem en la colección de stock
-            const stockItem = await Item.findOne({ PRODUCTO: productName });
+            const stockItem = await Item.findOne({ PRODUCTO: { $regex: productName, $options: 'i' } });
             if (!stockItem) {
-                throw new Error(`El ítem ${productName} no se encuentra en el stock.`);
+                console.error(`El ítem ${productName} no se encuentra en el stock.`);
+                continue; // Continuar con el siguiente ítem si no se encuentra en el stock
+            }
+
+            // Verificar que la cantidad en stock sea suficiente
+            if (stockItem.Stock < quantity) {
+                console.error(`Stock insuficiente para el ítem ${productName}. Stock actual: ${stockItem.Stock}, Cantidad solicitada: ${quantity}`);
+                continue; // Continuar con el siguiente ítem si no hay suficiente stock
             }
 
             // Descontar la cantidad del stock
-            await Item.updateOne(
+            const result = await Item.updateOne(
                 { _id: stockItem._id },
-                { $inc: { stock: -quantity } }
+                { $inc: { Stock: -quantity } }
             );
+
+            // Verificar que la actualización fue exitosa
+            if (result.nModified === 0) {
+                console.error(`No se pudo actualizar el stock para el ítem ${productName}.`);
+            } else {
+                console.log(`Stock actualizado para el ítem ${productName}. Cantidad descontada: ${quantity}`);
+            }
         }
 
         console.log('Stock actualizado correctamente.');
