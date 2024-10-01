@@ -1,7 +1,4 @@
-const client = require("twilio")(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+const { sendMessage } = require('../utils/twilioHelper');
 const { getChatGPTResponse } = require("../config/openaiClient.js");
 const deliveryDetails = require("./handleDeliberyDetails.js");
 
@@ -59,19 +56,11 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
     } else {
       console.log("Opción no reconocida:", Body);
       // Opcional: Manejar otras opciones no reconocidas
-      await client.messages.create({
-        body: "No entendí tu solicitud. Por favor, responde con 'confirmar', 'modificar' o 'cancelar'.",
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage("No entendí tu solicitud. Por favor, responde con 'confirmar', 'modificar' o 'cancelar'.", phoneNumber);
     }
   } catch (error) {
     console.error("Error en handleConfirmOrModify:", error.message);
-    await client.messages.create({
-      body: "Hubo un error en el sistema. Por favor, inténtalo de nuevo más tarde.",
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage("Hubo un error en el sistema. Por favor, inténtalo de nuevo más tarde.", phoneNumber);
   }
 }
 
@@ -112,18 +101,10 @@ async function manejarConfirmacion(user, phoneNumber, Body, conversation) {
         console.log("Respuesta a confirmacion dentro de confirmacion:", responseMessage);
 
         // Envía el mensaje de confirmación de pedido
-        await client.messages.create({
-          body: responseMessage,
-          from: process.env.TWILIO_WHATSAPP_NUMBER,
-          to: phoneNumber,
-        });
+        await sendMessage(responseMessage, phoneNumber);
       } catch (error) {
         console.error("Error al enviar el mensaje con Twilio:", error);
-        await client.messages.create({
-          body: "Hubo un error al enviar el mensaje. Por favor, inténtalo de nuevo más tarde.",
-          from: process.env.TWILIO_WHATSAPP_NUMBER,
-          to: phoneNumber,
-        });
+        await sendMessage("Hubo un error al enviar el mensaje. Por favor, inténtalo de nuevo más tarde.", phoneNumber);
       }
   
       // Actualizar la conversación y el estado del usuario
@@ -133,20 +114,12 @@ async function manejarConfirmacion(user, phoneNumber, Body, conversation) {
       await user.save();
     } else {
       console.log("No se pudo clasificar la intención de confirmación:", Body);
-      await client.messages.create({
-        body: "Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.",
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage("Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.", phoneNumber);
     }
 
   } catch (error) {
     console.error("Error en el proceso de confirmación:", error);
-    await client.messages.create({
-      body: "Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.",
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage("Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.", phoneNumber);
   }
 }
 
@@ -170,18 +143,10 @@ async function manejarModificacion(user, phoneNumber, Body, conversation) {
     user.stage = 'confirm_or_modify';
     await user.save();
 
-    await client.messages.create({
-      body: responseMessage,
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage(responseMessage, phoneNumber);
   } catch (error) {
     console.error("Error en el proceso de modificación:", error);
-    await client.messages.create({
-      body: "Hubo un error al procesar tu solicitud. Por favor, inténtalo de nuevo más tarde.",
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage("Hubo un error al procesar tu solicitud. Por favor, inténtalo de nuevo más tarde.", phoneNumber);
   }
 }
 
@@ -200,18 +165,10 @@ async function manejarCancelacion(user, phoneNumber, Body, conversation) {
     conversation.push({ role: "user", content: Body });
 
     try {
-      await client.messages.create({
-        body: responseMessage,
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage(responseMessage, phoneNumber);
     } catch (error) {
       console.error("Error al enviar el mensaje con Twilio:", error);
-      await client.messages.create({
-        body: "Hubo un error al enviar el mensaje. Por favor, inténtalo de nuevo más tarde.",
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage("Hubo un error al enviar el mensaje. Por favor, inténtalo de nuevo más tarde.", phoneNumber);
     }
 
     // Actualizar la conversación y el estado del usuario
@@ -220,11 +177,7 @@ async function manejarCancelacion(user, phoneNumber, Body, conversation) {
     await user.save();
   } catch (error) {
     console.error("Error en el proceso de cancelación:", error);
-    await client.messages.create({
-      body: "Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.",
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage("Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.", phoneNumber);
   }
 }
 
@@ -243,18 +196,10 @@ async function manejarNoConfirmar(user, phoneNumber, Body, conversation) {
     conversation.push({ role: "user", content: Body });
 
     try {
-      await client.messages.create({
-        body: responseMessage,
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage(responseMessage, phoneNumber);
     } catch (error) {
       console.error("Error al enviar el mensaje con Twilio:", error);
-      await client.messages.create({
-        body: "Hubo un error al enviar el mensaje. Por favor, inténtalo de nuevo más tarde.",
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage("Hubo un error al enviar el mensaje. Por favor, inténtalo de nuevo más tarde.", phoneNumber);
     }
 
     // Actualizar la conversación y el estado del usuario
@@ -263,11 +208,7 @@ async function manejarNoConfirmar(user, phoneNumber, Body, conversation) {
     await user.save();
   } catch (error) {
     console.error("Error en el proceso de no_confirmar:", error);
-    await client.messages.create({
-      body: "Hubo un error al procesar tu solicitud. Por favor, inténtalo de nuevo más tarde.",
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage("Hubo un error al procesar tu solicitud. Por favor, inténtalo de nuevo más tarde.", phoneNumber);
   }
 }
 

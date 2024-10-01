@@ -6,6 +6,7 @@ const { getChatGPTResponse } = require("../config/openaiClient.js");
 const verifyAreaCode = require("../controllers/areaCodeModifyier.js");
 const obtenerProximaSemana = require("../config/deliveryDateConfig.js");
 const Shipping = require("../models/shipping.js");
+const { sendMessage } = require('../utils/twilioHelper');
 
 // Prompt para obtener detalles de entrega
 const deliveryPrompt = `
@@ -86,29 +87,17 @@ async function deliveryDetails(user, phoneNumber, Body) {
       user.deliveryDetails = Body;
       await user.save();
 
-      await client.messages.create({
-        body: responseMessage,
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage(responseMessage, phoneNumber);
     } else {
       // Mensaje si el código de área no es válido
       const incorrectAreaCode = `Lo siento, actualmente solo realizamos entregas en Rosario y localidades aledañas. Parece que tu dirección está fuera de nuestra área de servicio, por lo que no podemos procesar tu pedido.`;
-      await client.messages.create({
-        body: incorrectAreaCode,
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage(incorrectAreaCode, phoneNumber);
     }
   } catch (error) {
     console.error(`Error procesando el mensaje: ${error.message}`);
     // Pedir nuevamente los datos si hay un error
     const retryMessage = `Hubo un problema con los datos proporcionados. Por favor, asegúrate de enviar la dirección completa, nombre, DNI, y día y hora de entrega en el formato correcto.`;
-    await client.messages.create({
-      body: retryMessage,
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage(retryMessage, phoneNumber);
   }
 }
 

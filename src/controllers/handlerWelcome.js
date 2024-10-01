@@ -5,6 +5,7 @@ const client = require("twilio")(
 );
 const { getChatGPTResponse } = require("../config/openaiClient.js");
 const User = require("../models/User.js");
+const { sendMessage } = require('../utils/twilioHelper');
 
 async function welcomeFlow(user, phoneNumber, Body) {
   // Define el prompt para clasificar la intención
@@ -54,11 +55,7 @@ async function welcomeFlow(user, phoneNumber, Body) {
     users.stage = 'confirm_or_modify';
     await users.save();
 
-    await client.messages.create({
-      body: responseMessage,
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage(responseMessage, phoneNumber);
 
     
   } else if (openAIResponse.toLowerCase() === "saludo o pregunta") {

@@ -1,8 +1,5 @@
-const client = require("twilio")(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
 const { getChatGPTResponse } = require("../config/openaiClient.js");
+const { sendMessage } = require('../utils/twilioHelper');
 const User = require('../models/User.js');
 
 const cancelPrompt = `
@@ -31,11 +28,7 @@ async function handleCancel(user, phoneNumber, Body) {
     ]);
     console.log("Respuesta a confirmacion:", responseMessage);
 
-    await client.messages.create({
-      body: responseMessage,
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage(responseMessage, phoneNumber);
 
     conversation.push({ role: "assistant", content: responseMessage });
     
@@ -61,11 +54,7 @@ async function handleCancel(user, phoneNumber, Body) {
     ]);
     console.log("Respuesta a confirmacion:", responseMessage);
 
-    await client.messages.create({
-      body: responseMessage,
-      from: process.env.TWILIO_WHATSAPP_NUMBER,
-      to: phoneNumber,
-    });
+    await sendMessage(responseMessage, phoneNumber);
 
     conversation.push({ role: "assistant", content: responseMessage });
     user.stage = "confirm_or_modify";
@@ -73,4 +62,4 @@ async function handleCancel(user, phoneNumber, Body) {
   }
 }
 
-module.exports = handleCancel;
+module.exports = { handleCancel };

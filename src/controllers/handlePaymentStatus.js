@@ -2,11 +2,7 @@ const Shipping = require("../models/shipping.js");
 const User = require("../models/User.js");
 const updateStock = require('../config/updateStock.js');
 const { getChatGPTResponse } = require("../config/openaiClient.js");
-
-const client = require("twilio")(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+const { sendMessage } = require('../utils/twilioHelper');
 
 const handlePaymentStatus = async (status, phoneNumber, deliveryStatus) => {
   let messageBody;
@@ -67,27 +63,25 @@ const handlePaymentStatus = async (status, phoneNumber, deliveryStatus) => {
         console.error("Error en el proceso de finalización del pedido:", error);
       }
 
+      await sendMessage(messageBody, phoneNumber);
       break;
     case "pending":
       messageBody = `El pago está pendiente, continúa tu transacción para confirmar el pedido.`;
+      await sendMessage(messageBody, phoneNumber);
       break;
     case "rejected":
       messageBody = `ALGO SALIÓ MAL.\n Tu pago fue rechazado.`;
+      await sendMessage(messageBody, phoneNumber);
       break;
     case "cancelled":
       messageBody = `El pago fue cancelado.`;
+      await sendMessage(messageBody, phoneNumber);
       break;
     default:
       messageBody = `Una vez realizado, envíe el mensaje: "pago"`;
+      await sendMessage(messageBody, phoneNumber);
       break;
   }
-
-  // Enviar el mensaje
-  await client.messages.create({
-    body: messageBody,
-    from: process.env.TWILIO_WHATSAPP_NUMBER,
-    to: phoneNumber,
-  });
 };
 
 module.exports = handlePaymentStatus;
