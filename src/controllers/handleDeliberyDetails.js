@@ -46,8 +46,23 @@ async function deliveryDetails(user, phoneNumber, Body) {
       (part) => part.trim()
     );
     console.log([direccionCompleta, nombrePersona, dni, diaYHora]);
-    if (!direccionCompleta || !nombrePersona || !dni || !diaYHora) {
-      throw new Error("Faltan datos importantes para el envío.");
+
+    // Identificar campos faltantes
+    const camposFaltantes = [];
+    if (!direccionCompleta) camposFaltantes.push("dirección completa");
+    if (!nombrePersona) camposFaltantes.push("nombre de la persona");
+    if (!dni) camposFaltantes.push("DNI");
+    if (!diaYHora) camposFaltantes.push("día y hora de entrega");
+
+    if (camposFaltantes.length > 0) {
+      // Generar mensaje específico con la IA
+      const promptFaltantes = `El usuario ha proporcionado información de envío incompleta. Los siguientes campos faltan: ${camposFaltantes.join(", ")}. Por favor, genera un mensaje claro y amigable para solicitar estos datos faltantes.`;
+      
+      const mensajeFaltante = await getChatGPTResponse([
+        { role: "system", content: promptFaltantes },
+      ]);
+
+      throw new Error(mensajeFaltante);
     }
 
     // Obtener la fecha de entrega
@@ -66,28 +81,33 @@ async function deliveryDetails(user, phoneNumber, Body) {
     await newShipping.save();
     console.log("Información del envío guardada correctamente");
 
-    // Enviar mensaje de continuación solo si los datos de envío son correctos
+    // Validar el código de área antes de proceder
     if (verifyAreaCode(phoneNumber)) {
-      const conversationMessages = conversation.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      }));
-      const responseMessage = await getChatGPTResponse([
-        ...conversationMessages,
-        { role: "user", content: Body },
-      ]);
-      console.log("Respuesta a confirmacion:", responseMessage);
+      // Asegurarse de que todos los datos de envío estén completos antes de proceder al pago
+      if (direccionCompleta && nombrePersona && dni && diaYHoraEntrega) {
+        const conversationMessages = conversation.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+        const responseMessage = await getChatGPTResponse([
+          ...conversationMessages,
+          { role: "user", content: Body },
+        ]);
+        console.log("Respuesta a confirmacion:", responseMessage);
 
-      // Actualizar la conversación y el estado del usuario
-      conversation.push(
-        { role: "user", content: Body },
-        { role: "assistant", content: responseMessage }
-      );
-      user.stage = "payment";
-      user.deliveryDetails = Body;
-      await user.save();
+        // Actualizar la conversación y el estado del usuario
+        conversation.push(
+          { role: "user", content: Body },
+          { role: "assistant", content: responseMessage }
+        );
+        user.stage = "payment";
+        user.deliveryDetails = Body;
+        await user.save();
 
-      await sendMessage(responseMessage, phoneNumber);
+        await sendMessage(responseMessage, phoneNumber);
+      } else {
+        throw new Error("Información de envío incompleta.");
+      }
     } else {
       // Mensaje si el código de área no es válido
       const incorrectAreaCode = `Lo siento, actualmente solo realizamos entregas en Rosario y localidades aledañas. Parece que tu dirección está fuera de nuestra área de servicio, por lo que no podemos procesar tu pedido.`;
@@ -95,9 +115,14 @@ async function deliveryDetails(user, phoneNumber, Body) {
     }
   } catch (error) {
     console.error(`Error procesando el mensaje: ${error.message}`);
-    // Pedir nuevamente los datos si hay un error
-    const retryMessage = `Hubo un problema con los datos proporcionados. Por favor, asegúrate de enviar la dirección completa, nombre, DNI, y día y hora de entrega en el formato correcto.`;
-    await sendMessage(retryMessage, phoneNumber);
+    // Enviar mensaje específico si hay un error de datos faltantes
+    if (camposFaltantes && camposFaltantes.length > 0) {
+      await sendMessage(error.message, phoneNumber);
+    } else {
+      // Pedir nuevamente los datos si hay un error genérico
+      const retryMessage = `Hubo un problema con los datos proporcionados. Por favor, asegúrate de enviar la dirección completa, nombre, DNI, y día y hora de entrega en el formato correcto.`;
+      await sendMessage(retryMessage, phoneNumber);
+    }
   }
 }
 

@@ -1,11 +1,18 @@
 const mongoose = require('mongoose');
 const User = require('../models/User.js'); // Asegúrate de que la ruta al modelo User sea correcta
+const Shipping = require('../models/shipping.js');
 
 // Función para limpiar el caché del usuario
 async function clearUserCache(phoneNumber) {
     try {
         // Busca el usuario en la base de datos
         const user = await User.findOne({ phoneNumber: phoneNumber });
+        const enviosPendientes = await Shipping.find({ phoneNumber: phoneNumber, estado: 'pending' });
+
+        if (enviosPendientes.length > 0) {
+            await Shipping.deleteMany({ phoneNumber: phoneNumber, estado: 'pending' });
+        }
+        
 
         if (!user) {
             console.error(`Usuario con número de teléfono ${phoneNumber} no encontrado.`);
@@ -14,7 +21,7 @@ async function clearUserCache(phoneNumber) {
         user.conversation = [];
         user.stage = 'welcome'; 
         user.lastOrder = { items: []},
-        user.lastOrderToLink = {
+        user.lastOrderToLink = {    
             items: [],
             paymentId: null,
             paymentStatus: null,
