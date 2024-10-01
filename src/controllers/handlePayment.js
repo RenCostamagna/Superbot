@@ -6,6 +6,7 @@ const { createPaymentLink } = require("../controllers/handleLinkPayment.js");
 const { getChatGPTResponse } = require("../config/openaiClient.js");
 const User = require("../models/User");
 require('dotenv').config();
+const { sendMessage } = require('../utils/twilioHelper');
 
 const mapPrompt = `
   En base a la lista de pedido que tienes, de productos con sus cantidades y precios, y al final, en la última línea, el total. Quiero que la transformes en el siguiente formato:
@@ -117,11 +118,7 @@ const handlePayment = async (phoneNumber) => {
 
   console.log("Enlace de pago:", paymentLink);
 
-  await client.messages.create({
-    body: paymentLink,
-    from: process.env.TWILIO_WHATSAPP_NUMBER,
-    to: phoneNumber,
-  });
+  await sendMessage(paymentLink, phoneNumber);
 
   const prompt = `Avisa a la persona que el pago puede impactar hasta dentro de 5 minutos, no des nombres ni envies una oracion de saludo.`;
   const conversationDos = user.conversation;
@@ -140,14 +137,9 @@ const handlePayment = async (phoneNumber) => {
   await user.save();
   console.log("Conversation:", user.conversation);
 
-  await client.messages.create({
-    body: mercadoPagoDelay,
-    from: process.env.TWILIO_WHATSAPP_NUMBER,
-    to: phoneNumber,
-  });
+  await sendMessage(mercadoPagoDelay, phoneNumber);
 
 
 };
 
 module.exports = handlePayment;
-

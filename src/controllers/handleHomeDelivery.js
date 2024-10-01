@@ -3,10 +3,7 @@ const { getChatGPTResponse } = require("../config/openaiClient.js");
 const { updateOrderHistory } = require("../config/updateUserOrderHistory.js");
 const Shipping = require("../models/shipping.js");
 const User = require("../models/User.js");
-const client = require("twilio")(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
+const { sendMessage } = require('../utils/twilioHelper');
 
 async function handleHomeDelivery(user, phoneNumber, Body) {
   try {
@@ -57,11 +54,7 @@ async function handleHomeDelivery(user, phoneNumber, Body) {
         { role: "assistant", content: responseMessage }
       );
 
-      await client.messages.create({
-        body: responseMessage,
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage(responseMessage, phoneNumber);
     } else if (deliveryResponse === "completado") {
       const conversation = user.conversation;
       const conversationMessages = conversation.map((msg) => ({
@@ -81,11 +74,7 @@ async function handleHomeDelivery(user, phoneNumber, Body) {
       );
       await userStatus.save();
 
-      await client.messages.create({
-        body: responseMessage,
-        from: process.env.TWILIO_WHATSAPP_NUMBER,
-        to: phoneNumber,
-      });
+      await sendMessage(responseMessage, phoneNumber);
 
       shippingStatus.estado = "entregado";
       await shippingStatus.save();
@@ -114,4 +103,4 @@ async function handleHomeDelivery(user, phoneNumber, Body) {
   }
 }
 
-module.exports = handleHomeDelivery;
+module.exports =  handleHomeDelivery ;
