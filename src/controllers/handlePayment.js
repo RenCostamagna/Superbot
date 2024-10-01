@@ -18,7 +18,7 @@ const mapPrompt = `
   Shampoo para gatos, Plusbelle, 200ml, 6, 500
   Total: $[total]
   
-  Asegúrate de mantener el formato exacto en cada línea. No agregues el guion delante del artículo.
+  Asegúrate de mantener el formato exacto en cada línea. No agregues el guion delante del artículo ni asteriscos.
   `;
 
 const handlePayment = async (phoneNumber) => {

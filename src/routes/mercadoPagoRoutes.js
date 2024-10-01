@@ -15,6 +15,13 @@ router.post("/mercadopago-webhook", async (req, res) => {
         console.log("Payment ID recibido:", paymentId);
 
         try {
+            // Verificar si el pago ya ha sido procesado
+            const existingPayment = await Payment.findOne({ paymentId });
+            if (existingPayment) {
+                console.log("Pago ya procesado:", paymentId);
+                return res.sendStatus(200);
+            }
+
             // Obtener detalles del pago desde la API de MercadoPago
             const response = await fetch(
                 `https://api.mercadopago.com/v1/payments/${paymentId}`,
@@ -33,7 +40,7 @@ router.post("/mercadopago-webhook", async (req, res) => {
                 // Verificar si el pago está aprobado
                 if (status !== "approved") {
                     console.log("Pago no confirmado:", status);
-                    return res.sendStatus(400); // Pago no confirmado
+                    return res.sendStatus(200); // Pago no confirmado
                 }
 
                 const userId = payment.metadata.user_id;
@@ -88,21 +95,22 @@ router.post("/mercadopago-webhook", async (req, res) => {
                 await sendNewOrderEmail(user, user.lastOrderToLink);
 
                 // Responder que la petición fue procesada correctamente
-                res.sendStatus(200);
+                return res.sendStatus(200);
             } else {
                 console.error(
                     "Error al obtener los detalles del pago:",
                     response.status,
                     await response.text()
                 );
-                res.sendStatus(500);
+                return res.sendStatus(500);
             }
         } catch (error) {
             console.error("Error en el webhook de MercadoPago:", error);
-            res.sendStatus(500);
+            return res.sendStatus(500);
         }
     } else {
-        res.sendStatus(400); // Tipo no manejado o datos incompletos
+        console.warn("Tipo de evento no manejado o datos incompletos:", req.body);
+        return res.sendStatus(400);
     }
 });
 

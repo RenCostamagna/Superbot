@@ -17,7 +17,8 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
       3. Cancelar
 
       El mensaje puede ser una oración completa o una sola palabra. Ten en cuenta el contexto de la conversación para hacer una clasificación precisa.
-
+      
+      - Asegurate de responder confirmar solo si el mensaje es una confirmación del pedido completo y no de un producto específico.
       - Si el mensaje es una confirmación de un producto específico, responde con 'modificar'.
       - Si el mensaje es una confirmación del pedido completo, responde con 'confirmar'.
       - Si el mensaje contiene una pregunta sobre cómo realizar modificaciones, responde con 'modificar'.
