@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
   phoneNumber: String,
   conversation: Array,
   stage: String,
-  deliveryDetails: String,
+  deliveryDetails: {},
   lastOrder: {
     items: [
 
@@ -22,7 +22,8 @@ const userSchema = new mongoose.Schema({
     total: Number,
     paymentStatus: String,
     paymentId: String,
-    deliveryStatus: String
+    deliveryStatus: String,
+    paymentLinkSent: Boolean
   },
   orderHistory: [
     {

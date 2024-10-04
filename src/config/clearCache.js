@@ -25,6 +25,7 @@ async function clearUserCache(phoneNumber) {
             items: [],
             paymentId: null,
             paymentStatus: null,
+            paymentLinkSent: false,
         };
         user.deliveryDetails = '';
         await user.save();
