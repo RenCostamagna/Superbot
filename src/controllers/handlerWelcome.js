@@ -25,7 +25,7 @@ async function welcomeFlow(user, phoneNumber, Body) {
     return;
   }
 
-  const conversation = users.conversation || [];
+  let conversation = users.conversation || [];
   console.log("Conversación actual:", conversation);
 
   // Prepara el mensaje para OpenAI
@@ -60,13 +60,6 @@ async function welcomeFlow(user, phoneNumber, Body) {
     
   } else if (openAIResponse.toLowerCase() === "saludo o pregunta") {
     // Si es un saludo o pregunta, cambia el estado y obtén la respuesta
-    conversation.push({ role: "user", content: Body });
-    await user.save();
-    console.log(user.conversation);
-
-    user.stage = "welcome";
-    await user.save();
-
     const conversationMessages = conversation.map((msg) => ({
       role: msg.role,
       content: msg.content,
@@ -84,8 +77,10 @@ async function welcomeFlow(user, phoneNumber, Body) {
     });
 
     // Actualiza la conversación del usuario con la respuesta del asistente
-    user.conversation.push({ role: "assistant", content: responseMessage });
-    await user.save();
+    conversation.push({ role: "user", content: Body });
+    conversation.push({ role: "assistant", content: responseMessage });
+    users.stage = "welcome";
+    await users.save();
   } else {
     console.error("No se pudo clasificar el mensaje.");
     return;

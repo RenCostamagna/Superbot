@@ -22,12 +22,36 @@ const mapPrompt = `
   Asegúrate de mantener el formato exacto en cada línea. No agregues el guion delante del artículo ni asteriscos.
   `;
 
-const handlePayment = async (phoneNumber) => {
+const handlePayment = async (phoneNumber, Body) => {
   
   const user = await User.findOne({ phoneNumber: phoneNumber });
 
   if (!user) {
     throw new Error("Usuario no encontrado.");
+  }
+
+  // Verificar si ya se ha enviado un enlace de pago
+  if (user.lastOrderToLink && user.lastOrderToLink.paymentLinkSent) {
+
+    const conversationDos = user.conversation;
+
+    const conversationMessagesDos = conversationDos.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+
+    const responseMessage = await getChatGPTResponse([
+      ...conversationMessagesDos,
+      { role: "user", content: Body },
+    ]);
+
+    await sendMessage(responseMessage, phoneNumber);
+    conversationDos.push({ role: "user", content: Body });
+    conversationDos.push({ role: "assistant", content: responseMessage });
+    await user.save();
+
+    console.log("El enlace de pago ya ha sido enviado anteriormente.");
+    return; // Salir de la función para evitar reenviar el enlace
   }
 
   const conversation = user.conversation;
@@ -58,7 +82,8 @@ const handlePayment = async (phoneNumber) => {
     .trim()
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line.length > 0) // Solo filtrar líneas vacías
+    .filter((line) => line.length > 0) // Filtrar líneas vacías
+    .filter(line => /^([^,]+,){4}[^,]+$/.test(line)) // Asegurar que hay 5 campos separados por comas
     .map((line) => line.replace(/^-*\s*/, "").trim()); // Eliminar guion y espacios al inicio
   
   console.log("Líneas de productos después del procesamiento:", productLines);
@@ -108,6 +133,7 @@ const handlePayment = async (phoneNumber) => {
   user.lastOrderToLink = {
     items: products,
     total: total,
+    paymentLinkSent: false, // Agregar una bandera para rastrear el envío del enlace
   };
 
   await user.save();
@@ -120,7 +146,11 @@ const handlePayment = async (phoneNumber) => {
 
   await sendMessage(paymentLink, phoneNumber);
 
-  const prompt = `Avisa a la persona que el pago puede impactar hasta dentro de 5 minutos, no des nombres ni envies una oracion de saludo.`;
+  // Actualizar la bandera después de enviar el enlace
+  user.lastOrderToLink.paymentLinkSent = true;
+  await user.save();
+
+  const prompt = `Avisa a la persona que el pago puede impactar hasta dentro de 5 minutos, no des nombres ni envies una oracion de saludo. Ademas, no des informacion de envio. Solamente avisa el tiempo de espera.`;
   const conversationDos = user.conversation;
 
   const conversationMessagesDos = conversationDos.map((msg) => ({

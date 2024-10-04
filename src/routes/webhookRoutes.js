@@ -19,6 +19,11 @@ const router = express.Router();
 const User = require("../models/User");
 
 const systemPrompt = `
+**Informacion de la empresa**
+- Nombre: Balros
+- Ubicacion: Castellanos 2486, Rosario, Santa Fe, Argentina
+- Horario de Atencion: Lunes a Viernes de 07:00 a 16:00
+
 **Reglas de Formato**
 - No uses negritas. Tene en cuenta que la aplicacion se despliega en whatsapp, y las negritas son con un asterisco para cada lado de la palabra.
 - Coloca asteriscos alrededor de los nombres de productos y el costo total para facilitar la lectura al cliente.
@@ -147,7 +152,7 @@ router.post("/", async (req, res) => {
 
     try {
       if (user.stage === "payment") {
-        await handlePayment(phoneNumber);
+        await handlePayment(phoneNumber, Body);
         // Actualizar el estado del usuario a 'ending'
         await user.save();
       }

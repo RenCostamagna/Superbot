@@ -26,14 +26,14 @@ const createPaymentLink = async (order, userId) => {
   const body = {
     items: transformedOrder.items,
 
-    back_urls: {
+    /*back_urls: {
       failure:
         process.env.MERCADOPAGO_STATUS_URL,
       success:
         process.env.MERCADOPAGO_STATUS_URL,
       pending:
         process.env.MERCADOPAGO_STATUS_URL,
-    },
+    },*/
     autoreturn: "approved",
     notification_url: process.env.MERCADOPAGO_WEBHOOK_URL,
     metadata: { userId: userId },
@@ -84,7 +84,7 @@ const sendNewOrderEmail = async (user, order) => {
 
       Teléfono: ${user.phoneNumber}
 
-      Detalles del pedido:
+      Detalles del pedido:\n
       ${productList}
 
       Total: $${order.total}
