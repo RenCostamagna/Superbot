@@ -1,4 +1,4 @@
-const client = require("twilio")(
+/*const client = require("twilio")(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
@@ -187,4 +187,4 @@ async function deliveryDetails(user, phoneNumber, Body) {
   }
 }
 
-module.exports = deliveryDetails;
+module.exports = deliveryDetails;*/

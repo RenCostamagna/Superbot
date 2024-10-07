@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+/*const mongoose = require("mongoose");
 const { getChatGPTResponse } = require("../config/openaiClient.js");
 const { updateOrderHistory } = require("../config/updateUserOrderHistory.js");
 const Shipping = require("../models/shipping.js");
@@ -103,4 +103,4 @@ async function handleHomeDelivery(user, phoneNumber, Body) {
   }
 }
 
-module.exports =  handleHomeDelivery ;
+module.exports =  handleHomeDelivery ;*/

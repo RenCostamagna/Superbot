@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const router = express.Router();
-const { sendNewOrderEmail } = require("../controllers/handleLinkPayment");
+const { sendNewOrderEmail } = require("../controllers/businessRegistrationController");
 const User = require("../models/User");
 const Payment = require("../models/Payment");
 const handlePaymentStatus = require("../controllers/handlePaymentStatus");

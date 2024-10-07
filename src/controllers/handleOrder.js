@@ -13,21 +13,15 @@ async function handleOrder() {
     } else {
       // Iterar sobre los productos encontrados
       items.forEach((item) => {
-        const itemsPrice = convertPrice(item.PRECIO);
-
+        const itemsPriceIva = convertPrice(item.Con_iva);
+        const itemsPriceNoIva = convertPrice(item.Sin_iva);
         itemList.push({
-          name: item.PRODUCTO,
-          price: itemsPrice.toFixed(2),
-          category: item.CATEGORIA,
-          format: item.Formato,
-          paraQueSirve: item.Para_que_sirve,
-          stock: item.Stock,
-          brand: item.MARCA,
-          edadAnimal: item.Edad_del_Animal,
-          cuantoTrae: item.Cuanto_trae,
-          tamanoAnimal: item.Tamaño_del_Animal,
-          proteinasBrutas: item.Cantidad_de_Proteina_bruta,
-          fechaDeVencimiento: item.Fecha_de_Vencimiento,
+          name: item.Artículo_descripcion,
+          priceIva: itemsPriceIva.toFixed(2),
+          priceNoIva: itemsPriceNoIva.toFixed(2),
+          moneda: item.Moneda,
+          category: item.Rubro,
+
         });
       });
     }
@@ -45,7 +39,7 @@ async function handleOrder() {
       if (item.error) {
         return `${item.name}: ${item.error}`;
       } else {
-        return `Nombre: ${item.name}, Precio: $${item.price}, Formato: ${item.format}, Para qué sirve: ${item.paraQueSirve}, Stock: ${item.stock}, Marca: ${item.brand}, Tamaño del animal: ${item.tamanoAnimal}, Cuánto trae: ${item.cuantoTrae}, Categoría: ${item.category}, Edad del animal: ${item.edadAnimal}, Proteínas brutas: ${item.proteinasBrutas}, Fecha de vencimiento: ${item.fechaDeVencimiento}`;
+        return `Nombre: ${item.name}, Precio con IVA: $${item.priceIva}, Precio sin IVA: $${item.priceNoIva}, Moneda: ${item.moneda}, Categoría: ${item.category}`;
       }
     })
     .join("\n\n");

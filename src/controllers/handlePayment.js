@@ -11,12 +11,12 @@ const { sendMessage } = require('../utils/twilioHelper');
 const mapPrompt = `
   En base a la lista de pedido que tienes, de productos con sus cantidades y precios, y al final, en la última línea, el total. Quiero que la transformes en el siguiente formato:
   
-  - Nombre del producto completo (incluyendo todo lo que esté en el campo que tiene el nombre del producto), marca, peso o volumen, cantidad, precio unitario
+  - Nombre del producto completo (incluyendo todo lo que esté en el campo que tiene el nombre del producto), peso o volumen, cantidad, precio unitario con IVA.
   - Total: total
   
   Ejemplo:
-  BOCATTO Gato x 10kg, Pedigree, 12kg, 2, 7000
-  Shampoo para gatos, Plusbelle, 200ml, 6, 500
+  BOCATTO Gato x 10kg Pedigree, 12kg, 2, 7000
+  Shampoo para gatos Plusbelle, 200ml, 6, 500
   Total: $[total]
   
   Asegúrate de mantener el formato exacto en cada línea. No agregues el guion delante del artículo ni asteriscos.
@@ -83,21 +83,21 @@ const handlePayment = async (phoneNumber, Body) => {
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0) // Filtrar líneas vacías
-    .filter(line => /^([^,]+,){4}[^,]+$/.test(line)) // Asegurar que hay 5 campos separados por comas
+    .filter(line => /^([^,]+,){3}[^,]+$/.test(line)) // Asegurar que hay 4 campos separados por comas
     .map((line) => line.replace(/^-*\s*/, "").trim()); // Eliminar guion y espacios al inicio
   
   console.log("Líneas de productos después del procesamiento:", productLines);
   
   const products = productLines.map((line) => {
     // Separa los componentes por comas
-    const [productName, brand, weightOrVolume, quantity, pricePerUnit] = line
+    const [productName, weightOrVolume, quantity, pricePerUnit] = line
       .split(",")
       .map((item) => item.trim());
   
     console.log("Procesando línea:", line); // Verificar cada línea procesada
   
     // Comprobar si hay datos faltantes
-    if (!productName || !brand || !weightOrVolume || !quantity || !pricePerUnit) {
+    if (!productName || !weightOrVolume || !quantity || !pricePerUnit) {
       throw new Error(`Datos faltantes en la línea: ${line}`);
     }
   
@@ -111,7 +111,6 @@ const handlePayment = async (phoneNumber, Body) => {
   
     return {
       productName,
-      brand, // Guardar la marca por separado
       weightOrVolume,
       quantity: quantityNumber,
       pricePerUnit: pricePerUnitNumber,

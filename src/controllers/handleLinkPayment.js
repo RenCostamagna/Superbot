@@ -1,6 +1,6 @@
 const { MercadoPagoConfig, Preference } = require("mercadopago");
 const { transformOrder } = require("../config/orderConfig.js");
-const nodemailer = require("nodemailer"); 
+//const nodemailer = require("nodemailer"); 
 const mongoose = require("mongoose");
 
 require("dotenv").config();
@@ -55,7 +55,7 @@ const createPaymentLink = async (order, userId) => {
   }
 };
 
-// Función para enviar el correo de notificación de nuevo pedido
+/* Función para enviar el correo de notificación de nuevo pedido
 const sendNewOrderEmail = async (user, order) => {
   let transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
@@ -99,6 +99,7 @@ const sendNewOrderEmail = async (user, order) => {
   } catch (error) {
     console.error("Error al enviar el correo de notificación:", error);
   }
-};
+};*/
 
-module.exports = { createPaymentLink, sendNewOrderEmail };
+module.exports = { createPaymentLink };
+//, sendNewOrderEmail
