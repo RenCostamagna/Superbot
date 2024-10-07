@@ -90,9 +90,26 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
 // Funciones auxiliares para manejar cada intención
 async function manejarConfirmacion(user, phoneNumber, Body, conversation) {
   try {
-    await deliveryDetails(user, phoneNumber, Body);
-    user.stage = 'delivery_details';
+    //await deliveryDetails(user, phoneNumber, Body);
+    const conversationMessages = conversation.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+    const responseMessage = await getChatGPTResponse([
+      ...conversationMessages,
+      { role: "user", content: Body },
+    ]);
+    console.log("Respuesta de modificación:", responseMessage);
+
+    // Actualizar la conversación y el estado del usuario
+    conversation.push(
+      { role: "user", content: Body },
+      { role: "assistant", content: responseMessage }
+    );
+    user.stage = 'payment'; // Cuando se termine de implementar el envio, cambiar a 'delivery_details'
     await user.save();
+    await sendMessage(responseMessage, phoneNumber);
+    
   } catch (error) {
     console.error("Error en el proceso de confirmación:", error);
     await sendMessage("Hubo un error al procesar tu pedido. Por favor, inténtalo de nuevo más tarde.", phoneNumber);

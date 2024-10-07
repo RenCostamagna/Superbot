@@ -21,6 +21,8 @@ async function clearUserCache(phoneNumber) {
         user.conversation = [];
         user.stage = 'welcome'; 
         user.lastOrder = { items: []},
+        user.typeOfClient = null,
+        user.businessData = {},
         user.lastOrderToLink = {    
             items: [],
             paymentId: null,

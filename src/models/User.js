@@ -4,7 +4,15 @@ const userSchema = new mongoose.Schema({
   phoneNumber: String,
   conversation: Array,
   stage: String,
-  deliveryDetails: {},
+  // Cuando se termine de implementar el envio, descomentar el campo "deliveryDetails"
+  //deliveryDetails: {}, 
+  typeOfClient: String,
+  businessData: {
+    name: String,
+    cuit: String,
+    address: String,
+    phone: String,
+  },
   lastOrder: {
     items: [
 
@@ -22,7 +30,7 @@ const userSchema = new mongoose.Schema({
     total: Number,
     paymentStatus: String,
     paymentId: String,
-    deliveryStatus: String,
+    //deliveryStatus: String,
     paymentLinkSent: Boolean
   },
   orderHistory: [
@@ -39,7 +47,7 @@ const userSchema = new mongoose.Schema({
       ],
       totalAmount: Number,
       orderDate: { type: Date, default: Date.now },
-      deliveryDetails: String,
+      //deliveryDetails: String,
       paymentStatus: String,
       shippingStatus: String,
       paymentID: String
