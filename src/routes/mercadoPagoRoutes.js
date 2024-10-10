@@ -28,7 +28,7 @@ router.post("/mercadopago-webhook", async (req, res) => {
                 {
                     method: "GET",
                     headers: {
-                        Authorization: `Bearer TEST-6235347846124389-091109-7d711dac37e885b86ab061148167e17f-435553967`,
+                        'Authorization': `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
                     },
                 }
             );
@@ -80,15 +80,15 @@ router.post("/mercadopago-webhook", async (req, res) => {
                     throw new Error(`Usuario no encontrado para el ID: ${userId}`);
                 }
                 const phoneNumber = user.phoneNumber;
-                const deliveryStatus = user.lastOrderToLink.deliveryStatus;
-                const diaYHoraEntrega = user.lastOrderToLink.diaYHoraEntrega || "No especificado"; // Asegúrate de que no sea null
+                //const deliveryStatus = user.lastOrderToLink.deliveryStatus;
+                //const diaYHoraEntrega = user.lastOrderToLink.diaYHoraEntrega || "No especificado"; // Asegúrate de que no sea null
 
                 // Llamar a la función handlePaymentStatus para gestionar el envío automático del mensaje
                 await handlePaymentStatus(
                     status,
                     phoneNumber,
-                    deliveryStatus,
-                    diaYHoraEntrega // Asegúrate de pasar este valor
+                    //deliveryStatus,
+                    //diaYHoraEntrega // Asegúrate de pasar este valor
                 );
 
                 // Enviar correo de notificación a la empresa

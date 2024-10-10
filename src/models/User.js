@@ -13,11 +13,6 @@ const userSchema = new mongoose.Schema({
     address: String,
     phone: String,
   },
-  lastOrder: {
-    items: [
-
-    ]
-  },
   lastOrderToLink: {
     items: [
       {

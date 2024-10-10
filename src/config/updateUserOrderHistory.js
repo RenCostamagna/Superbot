@@ -14,10 +14,10 @@ const updateOrderHistory = async (user) => {
                 price: item.pricePerUnit,
               })),
             totalAmount: user.lastOrderToLink.total,
-            deliveryDetails: user.deliveryStatus, 
+            //deliveryDetails: user.deliveryStatus, 
             paymentStatus: user.lastOrderToLink.paymentStatus,
             orderDate: new Date(),
-            shippingStatus: user.lastOrderToLink.deliveryStatus,
+            //shippingStatus: user.lastOrderToLink.deliveryStatus,
             conversation: user.conversation,
             paymentID: user.lastOrderToLink.paymentID,
             paymentLinkSent: user.lastOrderToLink.paymentLinkSent

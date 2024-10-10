@@ -1,11 +1,71 @@
-/*const mongoose = require("mongoose");
+//const Shipping = require("../models/shipping.js");
+//const User = require("../models/User.js");
+const mongoose = require("mongoose");
 const { getChatGPTResponse } = require("../config/openaiClient.js");
 const { updateOrderHistory } = require("../config/updateUserOrderHistory.js");
-const Shipping = require("../models/shipping.js");
-const User = require("../models/User.js");
 const { sendMessage } = require('../utils/twilioHelper');
 
+
 async function handleHomeDelivery(user, phoneNumber, Body) {
+try {
+  const promptPostPedido = `Sos el escargado de confirmar si el usuario fue a retirar su pedido. 
+  Tu tarea es reconocer la intencion.
+  - En caso de que sea una pregunta sobre el estado del pedido o como debe continuar con la compra, responde "estado", sin mas aclaraciones ni informacion.
+  - En caso de ser la confirmacion de que retiro el pedido, responde con "completado", sin mas aclaraciones ni informacion.
+  
+  No agregues informacion adicional ni puntos al final
+  El mensaje es este: ${Body}`;
+
+  const conversationMessages = conversation.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+  }));
+
+  let responseMessage = await getChatGPTResponse([
+    ...conversationMessages,
+    { role: "user", content: Body },
+    { role: "system", content: promptPostPedido }
+  ]);
+
+  if (responseMessage === "completado") {
+    const confirmationPrompt = 'El usuario ya retiro el pedido, responde manteniendo el contexto de la conversación'
+    const conversation = user.conversation;
+    const conversationMessages = conversation.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+    responseMessage = await getChatGPTResponse([
+      ...conversationMessages,
+      { role: "user", content: Body },
+      { role: "system", content: confirmationPrompt }
+    ]);
+
+    conversation.push({ role: "user", content: Body }, { role: "assistant", content: responseMessage });
+    await updateOrderHistory(user);
+    await sendMessage(responseMessage, phoneNumber);
+    await user.save();
+  } else if (responseMessage === "estado") {
+    const confirmationPrompt = 'El usuario realizo alguna pregunta sobre el estado del pedido o como debe continuar con la compra, responde manteniendo el contexto de la conversación'
+    const conversation = user.conversation;
+    const conversationMessages = conversation.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+    responseMessage = await getChatGPTResponse([
+      ...conversationMessages,
+      { role: "user", content: Body },
+      { role: "system", content: confirmationPrompt }
+    ]);   
+    conversation.push({ role: "user", content: Body }, { role: "assistant", content: responseMessage });
+    await sendMessage(responseMessage, phoneNumber);
+    await user.save();
+  }
+
+} catch (error) {
+  console.error("Error en el proceso de entrega:", error);
+}
+
+  /*
   try {
     const promptDelivery = `Sos el encargado de los envios de un supermercado, el usuario te consultura sobre el estado de su pedido o confirmara que el pedido le llego correctamete
                                 Tu tarea es reconocer la intencion.
@@ -100,7 +160,7 @@ async function handleHomeDelivery(user, phoneNumber, Body) {
   } catch (error) {
     console.error("Error en el proceso de entrega:", error);
     // Aquí puedes manejar el error, por ejemplo, enviando un mensaje de error al usuario o registrando el error.
-  }
+  }*/
 }
 
-module.exports =  handleHomeDelivery ;*/
+module.exports =  handleHomeDelivery ;

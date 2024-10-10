@@ -1,11 +1,9 @@
 const { sendMessage } = require('../utils/twilioHelper');
 const { getChatGPTResponse } = require("../config/openaiClient.js");
-const deliveryDetails = require("./handleDeliberyDetails.js");
+//const deliveryDetails = require("./handleDeliberyDetails.js");
 
 async function handleConfirmOrModify(user, phoneNumber, Body) {
   try {
-    let responseMessage;
-
     // Prompt para clasificar la intención del mensaje
     const modifyOrConfirmPrompt = `
       Clasifica la intención de este mensaje en una de las siguientes categorías:
@@ -14,15 +12,17 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
       3. Cancelar
       4. No_confirmar
 
-      El mensaje puede ser una oración completa o una sola palabra. Ten en cuenta el contexto de la conversación para hacer una clasificación precisa.
+      El mensaje puede ser una oración completa o una sola palabra.
       
-      - Responde 'confirmar' solo si el mensaje es una confirmación del pedido completo y contiene datos de envío como nombre y apellido, DNI, dirección o día y horario.
+      - Responde 'confirmar' solo si el mensaje es una confirmación del pedido completo. En este caso tene en cuenta la pregunta que se puede haber hecho antes.
       - Si el mensaje es una confirmación de un producto específico, responde con 'modificar'.
       - Si el mensaje contiene una pregunta sobre cómo realizar modificaciones o respuestas a preguntas anteriores, responde con 'modificar'.
       - Si el mensaje menciona explícitamente la palabra 'cancelar', responde con 'cancelar'.
       - Si el mensaje no es una confirmación, una modificación, una cancelación o una pregunta sobre cómo realizar modificaciones, responde con 'no_confirmar'.
-      
+      - Tene en cuenta el contexto de la conversación para hacer una clasificación precisa, ya que el usuario puede responder preguntas anteriores.
+
       **Ejemplos de confirmación del pedido:**
+      - Mensaje anterior: "Queres confirmar el pedido?", Mensaje: "Si dale"
       - "Así está bien"
       - "Sí, así está bien"
       - "Confirmo"
@@ -47,9 +47,7 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
       - "No estoy seguro."
       - "Necesito más información."
 
-      Responde solo con una de las palabras: 'modificar', 'confirmar', 'cancelar' o 'no_confirmar'.
-
-      El mensaje es: ${Body}`;
+      Responde solo con una de las palabras: 'modificar', 'confirmar', 'cancelar' o 'no_confirmar'.`;
     
     const conversation = user.conversation;
 
@@ -60,9 +58,9 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
     }));
     const responseMessagePrompt = await getChatGPTResponse([
       ...conversationMessagesPrompt,
+      { role: "user", content: Body },
       { role: "system", content: modifyOrConfirmPrompt },
     ]);
-    console.log("Respuesta de clasificación:", responseMessagePrompt);
 
     // Manejar la respuesta de clasificación
     const intencion = responseMessagePrompt.toLowerCase().trim();

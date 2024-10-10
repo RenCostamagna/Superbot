@@ -20,6 +20,7 @@ const mapPrompt = `
   Total: $[total]
   
   Asegúrate de mantener el formato exacto en cada línea. No agregues el guion delante del artículo ni asteriscos.
+  Si el no se dispone de peso o volumen, incluye la palabra "unidad" en el campo de peso o volumen.
   `;
 
 const handlePayment = async (phoneNumber, Body) => {
