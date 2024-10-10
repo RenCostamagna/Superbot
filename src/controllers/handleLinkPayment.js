@@ -7,7 +7,7 @@ require("dotenv").config();
 
 // Configuración del cliente de MercadoPago
 const client = new MercadoPagoConfig({
-  accessToken: 'TEST-6235347846124389-091109-7d711dac37e885b86ab061148167e17f-435553967',
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
 });
 
 // Función para crear un enlace de pago
@@ -26,15 +26,15 @@ const createPaymentLink = async (order, userId) => {
   const body = {
     items: transformedOrder.items,
 
-    /*back_urls: {
+    back_urls: {
       failure:
         process.env.MERCADOPAGO_STATUS_URL,
       success:
         process.env.MERCADOPAGO_STATUS_URL,
       pending:
         process.env.MERCADOPAGO_STATUS_URL,
-    },*/
-    autoreturn: "approved",
+    },
+    auto_return: 'all',
     notification_url: process.env.MERCADOPAGO_WEBHOOK_URL,
     metadata: { userId: userId },
   };
@@ -55,51 +55,4 @@ const createPaymentLink = async (order, userId) => {
   }
 };
 
-/* Función para enviar el correo de notificación de nuevo pedido
-const sendNewOrderEmail = async (user, order) => {
-  let transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: process.env.EMAIL_SECURE,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
-  let productList = user.lastOrderToLink.items.map(item => {
-    console.log("Item:", item); // Registro de depuración
-    const title = item.productName || 'Título no disponible';
-    const quantity = item.quantity || 'Cantidad no disponible';
-    const unit_price = item.pricePerUnit || 'Precio no disponible';
-    return `${title} - Cantidad: ${quantity} - Precio unitario: $${unit_price}`;
-  }).join('\n');
-
-  let mailOptions = {
-    from: '"Sistema de Pedidos" <noreply@tutienda.com>',
-    to: process.env.COMPANY_EMAIL,
-    subject: "Nuevo pedido registrado",
-    text: `
-      Se ha registrado un nuevo pedido:
-
-      Teléfono: ${user.phoneNumber}
-
-      Detalles del pedido:\n
-      ${productList}
-
-      Total: $${order.total}
-
-      Por favor, procesa este pedido lo antes posible.
-    `,
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log("Correo de notificación enviado a la empresa");
-  } catch (error) {
-    console.error("Error al enviar el correo de notificación:", error);
-  }
-};*/
-
 module.exports = { createPaymentLink };
-//, sendNewOrderEmail

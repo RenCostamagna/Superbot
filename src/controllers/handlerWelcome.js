@@ -15,8 +15,9 @@ async function welcomeFlow(user, phoneNumber, Body) {
   Si el mensaje expresa una intención de compra mencionando un producto específico, como en "Quiero comprar alimento para gato", se considera un pedido.
   Si el mensaje es un saludo general o una pregunta sobre cómo usar la aplicación, como en "Hola, quiero hacer un pedido" o "¿Cómo compro?", se considera un saludo o pregunta sobre cómo usar la aplicación.
   Responde solo con "pedido" si es un pedido o con "saludo o pregunta" en los demás casos.
-  
-  Mensaje: ${Body};`
+  Tene en cuenta el contexto de la conversación para hacer una clasificación precisa, ya que el usuario puede responder preguntas anteriores.
+  `
+  let responseMessage;
 
   // Recupera la conversación del usuario
   let users = await User.findOne({ phoneNumber });
@@ -28,14 +29,21 @@ async function welcomeFlow(user, phoneNumber, Body) {
   let conversation = users.conversation || [];
   console.log("Conversación actual:", conversation);
 
-  // Prepara el mensaje para OpenAI
-  const messages = [{ role: "user", content: welcomePrompt }];
+  const conversationMessages = conversation.map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+  }));
 
   // Obtiene la respuesta de OpenAI
-  let openAIResponse = await getChatGPTResponse(messages);
+  let openAIResponse = await getChatGPTResponse([
+    ...conversationMessages,
+    { role: "user", content: Body },
+    { role: "system", content: welcomePrompt }
+  ]);
+
   console.log("Respuesta de OpenAI:", openAIResponse);
 
-  let responseMessage;
+  
   if (openAIResponse.toLowerCase() === "pedido") {
     // Si es un pedido, maneja el pedido y obtén la respuesta
     console.log("Respuesta de pedido:", responseMessage);

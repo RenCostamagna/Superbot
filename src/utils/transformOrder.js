@@ -5,6 +5,7 @@ const transformOrder = (order) => {
       title: item.productName,
       quantity: item.quantity,
       unit_price: item.pricePerUnit,
+      currency_id: "ARS",
     })),
   };
 };

@@ -2,8 +2,8 @@ const express = require("express");
 
 //const handleOrder = require('../controllers/handleOrder');
 //Cuando se termine de implementar el envio, descomentar los siguientes imports
-//const handleHomeDelivery = require("../controllers/handleHomeDelivery.js");
 //const handleDeliveryDetails = require("../controllers/handleDeliberyDetails.js");
+const handleHomeDelivery = require("../controllers/handleHomeDelivery.js");
 const handleConfirmOrModify = require("../controllers/handleConfirmOrModify");
 const handleCancel = require("../controllers/handleCancel.js");
 const welcomeFLow = require("../controllers/handlerWelcome.js");
@@ -93,7 +93,7 @@ const systemPrompt = `
 - CPC significa: Carne, pollo y cereales.
 - Si piden el producto más barato o más caro, asegúrate de que lo sea.
 - Si el cliente es un negocio, no le des la opción de realizar un pedido, ya que no puede realizarlo sin estar registrado ni verificados los datos del negocio.
-
+- Si alguna persona pregunta acerca de algun empleado, indicale que sos un bot y que no tenes informacion sobre los empleados.
 `;
 
 // Ruta para el webhook
@@ -169,7 +169,6 @@ router.post("/", async (req, res) => {
         **3. No determinado:**
         - Si no puedes determinar, responde con "no_determinado".`
 
-        
         const conversationMessages = conversation.map((msg) => ({
           role: msg.role,
           content: msg.content,
@@ -210,10 +209,10 @@ router.post("/", async (req, res) => {
             // Cuando se termine de implementar el envio, descomentar el caso de "delivery_details"
             /*case "delivery_details":
               await handleDeliveryDetails(user, phoneNumber, Body);
-              break;
+              break;*/
             case "home_delivery":
               await handleHomeDelivery(user, phoneNumber, Body);
-              break;*/
+              break;
             default:
               // Si el estado no es reconocido
               await client.messages.create({
@@ -295,7 +294,7 @@ router.post("/", async (req, res) => {
               await sendMessage(responseMessage, phoneNumber);
               conversation.push({role: "user", content: message});
               conversation.push({role: "assistant", content: responseMessage});
-              user.status = "pending verification";
+              user.stage = "pending verification";
               await user.save();
               // Enviar correo de notificación
               await sendNewBusinessRegistrationEmail(user.businessData);
@@ -329,13 +328,20 @@ router.post("/", async (req, res) => {
             await user.save();
             await sendMessage(responseMessage, phoneNumber);
           }
-        } else if (user.status === "pending verification") {
+        } else if (user.stage === "pending verification") {
           console.log("El negocio está pendiente de verificación");
-          const verificationPrompt = `El negocio está pendiente de verificación. 
-          Tene en cuenta las siguientes instrucciones:
-          - Si el usuario envia un mensaje, responde amablemente manteniendo el contexto de la conversación pero no le des la opcion de realizar un pedido.
-          - No des informacion de productos ni precios.
-          - En caso de preguntarlo, aclarale al usuario que una vez esten verificados los datos, nos comunicaremos para continuar el proceso`
+          const verificationPrompt = `
+            Verifica los datos de un negocio pendiente de verificación siguiendo las instrucciones.
+
+            - No proporciones información sobre productos ni precios.
+            - Si el usuario pregunta sobre productos o precios, aclara que una vez verificados los datos, nos comunicaremos para continuar el proceso.
+            - No preguntes al usuario si desea realizar un pedido, ya que no puede hacerlo sin estar registrado ni tener los datos del negocio verificados.
+
+            # Output Format
+
+            Responde a las preguntas del usuario de forma clara y específica, asegurando adherirse a las instrucciones proporcionadas.
+          .
+          `
 
           const conversationMessages = conversation.map((msg) => ({
             role: msg.role,
