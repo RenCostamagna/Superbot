@@ -7,12 +7,7 @@ const userSchema = new mongoose.Schema({
   // Cuando se termine de implementar el envio, descomentar el campo "deliveryDetails"
   //deliveryDetails: {}, 
   typeOfClient: String,
-  businessData: {
-    name: String,
-    cuit: String,
-    address: String,
-    phone: String,
-  },
+  cuit: String,
   lastOrderToLink: {
     items: [
       {

@@ -104,7 +104,7 @@ async function manejarConfirmacion(user, phoneNumber, Body, conversation) {
       { role: "user", content: Body },
       { role: "assistant", content: responseMessage }
     );
-    user.stage = 'payment'; // Cuando se termine de implementar el envio, cambiar a 'delivery_details'
+    user.stage = 'confirmation'; // Cuando se termine de implementar el envio, cambiar a 'delivery_details'
     await user.save();
     await sendMessage(responseMessage, phoneNumber);
     
