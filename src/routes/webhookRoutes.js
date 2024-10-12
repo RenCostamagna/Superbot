@@ -1,18 +1,20 @@
 const express = require("express");
 
+//const { getChatGPTResponse } = require("../config/openaiClient.js");
+//const { sendMessage } = require("../utils/twilioHelper.js");
+//const { sendNewBusinessRegistrationEmail } = require("../controllers/businessRegistrationController.js");
 //const handleOrder = require('../controllers/handleOrder');
 //Cuando se termine de implementar el envio, descomentar los siguientes imports
 //const handleDeliveryDetails = require("../controllers/handleDeliberyDetails.js");
+
 const handleHomeDelivery = require("../controllers/handleHomeDelivery.js");
 const handleConfirmOrModify = require("../controllers/handleConfirmOrModify");
 const handleCancel = require("../controllers/handleCancel.js");
 const welcomeFLow = require("../controllers/handlerWelcome.js");
 const handlePayment = require("../controllers/handlePayment.js");
 const clearUserCache = require("../config/clearCache.js");
-const handleOrder = require('../controllers/handleOrder.js');
-const { getChatGPTResponse } = require("../config/openaiClient.js");
-const { sendMessage } = require("../utils/twilioHelper.js");
-const { sendNewBusinessRegistrationEmail } = require("../controllers/businessRegistrationController.js");
+const handleProductsList = require('../controllers/handlePrductsList.js');
+
 require("dotenv").config();
 
 const axios = require("axios");
@@ -41,6 +43,7 @@ const systemPrompt = `
 **Manejo de Inventario**
 - Solo incluye productos disponibles en el inventario (inventoryTable).
 - Verifica que la cantidad en stock sea suficiente para cubrir la solicitud del cliente.
+- Cuando se realizan preguntas muy generales sobre productos, hace una subpregunta para obtener más información.
 
 **Productos No Disponibles**
 - Si un producto está agotado, no lo incluyas en la lista.
@@ -49,7 +52,7 @@ const systemPrompt = `
 
 **Especificaciones de Productos**
 - Sé específico al referirte a los productos (tipo de alimento, medicamento, accesorios, etc.).
-- Guíate por las categorías y secciones de la inventoryTable.
+- Devuelve todos los productos que tengan relacion con el pedido del cliente, independientemente del rubro.
 
 **Productos con Múltiples Opciones**
 - Si un cliente solicita un producto con varias opciones (ej: "alimento para gatos"), ofrece las opciones disponibles y deja que elija.
@@ -61,16 +64,6 @@ const systemPrompt = `
 - Usa un lenguaje claro, amigable y local (ej: "tenés", "querés").
 - Varía tus respuestas para mantener una conversación fluida y amena.
 
-**Tipo de cliente**
-- Cuando el cliente envie un mensaje por primera vez, indicale que primero debe decirnos si es consumidor final o si es para un negocio.
-
-**Negocio**
-- En caso de que el usuario sea un negocio, solicita los siguiente datos:
-  - Nombre del negocio
-  - Cuit
-  - Dirección
-- En este caso, avisarle al usuario que se debera confirmar los datos del negocio y que nos comunicaremos con el para confirmar los datos y continuar con el proceso de compra.
-
 **Preguntas sobre el Sistema**
 - Si el cliente pregunta cómo usar el sistema, explica:
 - Pueden enviar una lista de productos para comprar.
@@ -79,8 +72,7 @@ const systemPrompt = `
 - Estarás disponible para ayudar en lo que necesiten.
 
 **Confirmación del Pedido**
-- Una vez el pedido este confirmado, indicale que el pedido fue confirmado y que pasara a la etapa de pago. 
-- El retiro se realizara en el local dentro de los horarios de atención.
+- Cuando se confirme el pedido envia un breve mensaje de agradecimiento y el resumen del pedido y el costo total.
 
 **Cancelación del Pedido**
 - Si el cliente quiere cancelar, pregunta si está seguro.
@@ -114,7 +106,6 @@ router.post("/", async (req, res) => {
       console.log("El mensaje convertido a texto es:", message);
     }
 
-
     // Comando para limpiar la caché del usuario
     if (message.toLowerCase() === "clear") {
       await clearUserCache(phoneNumber);
@@ -141,59 +132,17 @@ router.post("/", async (req, res) => {
 
       if (!hasSystemMessage) {
         // Agrega el mensaje del sistema solo si no está presente
-        const formattedList = await handleOrder();
+        const formattedList = await handleProductsList();
         const systemMessage = { role: "system", content: `${systemPrompt}, InventoryTable: ${formattedList}` };
         conversation.push(systemMessage);
         await user.save();
       }
 
       let responseMessage;
-      console.log(`Tipo de cliente actual: ${user.typeOfClient}`);
-      if (user.typeOfClient === "" || user.typeOfClient === null) {
-        const verificationMessagePrompt = `
-        Eres el encargado de verificar si el cliente es un consumidor final o un negocio.
-        Tienes que identificar una de las siguientes opciones:
-
-        **Instrucciones:**
-        - No agregues puntos ni guiones en caso de la respuesta sea "consumidor final" o "negocio".
-        - No agregues comillas en ningun caso.
-        - No agregues nada mas si la respuesta es "consumidor final" o "negocio".
-        - Si no puedes determinar, responde con "no_determinado".
-
-        **1. Consumidor Final:**
-        - Si el cliente es un consumidor final, responde con "consumidor final".
       
-        **2. Negocio:**
-        - Si el cliente es un negocio, responde con "negocio".
-
-        **3. No determinado:**
-        - Si no puedes determinar, responde con "no_determinado".`
-
-        const conversationMessages = conversation.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        }));
-        responseMessage = await getChatGPTResponse([
-          ...conversationMessages,
-          { role: "user", content: message },
-          { role: "system", content: `${verificationMessagePrompt}` },
-        ]);
-
-        console.log(`Respuesta de ChatGPT para verificación de tipo de cliente:`, responseMessage);
-        
-        if (responseMessage) {
-          console.log(`Mensaje enviado al usuario`);
-        } else {
-          console.log("Advertencia: responseMessage es undefined después de la verificación del tipo de cliente");
-        }
-      }
-      
-      if (responseMessage && responseMessage.toLowerCase() === "consumidor final" || user.typeOfClient === "consumidor final") {
-        user.typeOfClient = "consumidor final";
-        await user.save();
         console.log(`Usuario actualizado a consumidor final:`, user);
 
-        if (user.stage !== "payment" && user.stage !== "ending") {
+        if (user.stage !== "payment" && user.stage !== "ending" && user.stage !== "confirmation") {
           console.log(`Etapa actual del usuario: ${user.stage}`);
           // Redirigir a la función correspondiente según el estado del usuario
           switch (user.stage) {
@@ -206,6 +155,7 @@ router.post("/", async (req, res) => {
             case "cancel":
               await handleCancel(user, phoneNumber, message);
               break;
+            // Esperando a la api del berna de usuarios
             // Cuando se termine de implementar el envio, descomentar el caso de "delivery_details"
             /*case "delivery_details":
               await handleDeliveryDetails(user, phoneNumber, Body);
@@ -229,161 +179,12 @@ router.post("/", async (req, res) => {
             await handlePayment(phoneNumber, message);
             // Actualizar el estado del usuario a 'ending'
             await user.save();
+          } else if (user.stage === "confirmation") {
+            await handleConfirmation(user, phoneNumber, Body);
           }
         } catch (error) {
-          console.error("Error en el proceso de pago:", error);
-        }
-
-      } else if (responseMessage && responseMessage.toLowerCase() === "negocio" || user.typeOfClient === "negocio") {
-        const businessPrompt = `
-        Eres el encargado del registro de un negocio.
-        Tienes que identificar una de las siguientes opciones:
-
-        **1. Datos del negocio:**
-            1. Nombre del negocio.
-            2. Cuit.
-            3. Dirección.
-        Ten en cuenta que hay calles que tienen nombres de personas.
-        Tu respuesta tiene que estar dada en este formato: Nombre del negocio, cuit, dirección, telefono y email. Por ejemplo: "Balros, 30-60234567-9, Castellanos 2486 Rosario".
-        Solo responde con la información solicitada y en ningún caso agregues información adicional.
-        Si la informacion esta incompleta, no completes esos campos faltantes.
-
-        **2. Mensajes de confirmación:**
-        Si no hay ningún dato de envio, responde manteniendo el contexto de la conversación.
-
-        **3. Aclaraciones sobre el negocio:**
-        No incluyas los datos de nuestro negocio como datos del negocio del usuario.
-        `;
-        user.typeOfClient = "negocio";
-        await user.save();
-        
-        console.log(`Datos actuales del negocio:`, user.businessData);
-        if (!user.businessData || !isBusinessDataComplete(user.businessData)) {
-          const conversation = user.conversation;
-          const conversationMessages = conversation.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          }));
-          responseMessage = await getChatGPTResponse([
-            ...conversationMessages,
-            { role: "user", content: message },
-            { role: "system", content: `${businessPrompt}` },
-          ]);
-
-          console.log(`Respuesta de ChatGPT para datos del negocio:`, responseMessage);
-          const extractedData = extractBusinessData(responseMessage);
-          console.log(`Datos extraídos:`, extractedData);
-
-          if (extractedData) {
-            // Modificar esta parte para evitar sobrescribir datos válidos
-            user.businessData = {
-              name: extractedData.name || user.businessData?.name,
-              cuit: extractedData.cuit || user.businessData?.cuit,
-              address: extractedData.address || user.businessData?.address,
-              phone: user.phoneNumber
-            };
-            await user.save();
-            console.log(`Datos del negocio actualizados:`, user.businessData);
-
-            if (isBusinessDataComplete(user.businessData)) {
-              responseMessage = await getChatGPTResponse([
-                ...conversationMessages,
-                { role: "user", content: message },
-                { role: "system", content: "Los datos del negocio están completos. Genera un mensaje de confirmación y pregunta si desean realizar un pedido." },
-              ]);
-              await sendMessage(responseMessage, phoneNumber);
-              conversation.push({role: "user", content: message});
-              conversation.push({role: "assistant", content: responseMessage});
-              user.stage = "pending verification";
-              await user.save();
-              // Enviar correo de notificación
-              await sendNewBusinessRegistrationEmail(user.businessData);
-              
-            } else {
-              try {
-                let missingDataMessage = await getMissingDataPrompt(user.businessData, conversation);
-                
-                // Si por alguna razón el mensaje está vacío, usa un mensaje predeterminado
-                if (!missingDataMessage || missingDataMessage.trim() === '') {
-                  missingDataMessage = "Por favor, proporciona los datos faltantes de tu negocio.";
-                }
-                conversation.push({role: "user", content: message});
-                conversation.push({role: "assistant", content: missingDataMessage});
-
-                await user.save();
-                await sendMessage(missingDataMessage, phoneNumber);
-              } catch (error) {
-                console.error("Error al procesar la solicitud de datos faltantes:", error);
-                await sendMessage("Lo siento, hubo un problema al procesar tu solicitud. Por favor, intenta nuevamente.", phoneNumber);
-              }
-            }
-          } else {
-            responseMessage = await getChatGPTResponse([
-              ...conversationMessages,
-              { role: "user", content: message },
-              { role: "system", content: "No se pudieron extraer los datos del negocio. Solicita amablemente al usuario que proporcione el nombre del negocio, CUIT y dirección separados por comas." },
-            ]);
-            conversation.push({role: "user", content: message});
-            conversation.push({role: "assistant", content: responseMessage});
-            await user.save();
-            await sendMessage(responseMessage, phoneNumber);
-          }
-        } else if (user.stage === "pending verification") {
-          console.log("El negocio está pendiente de verificación");
-          const verificationPrompt = `
-            Verifica los datos de un negocio pendiente de verificación siguiendo las instrucciones.
-
-            - No proporciones información sobre productos ni precios.
-            - Si el usuario pregunta sobre productos o precios, aclara que una vez verificados los datos, nos comunicaremos para continuar el proceso.
-            - No preguntes al usuario si desea realizar un pedido, ya que no puede hacerlo sin estar registrado ni tener los datos del negocio verificados.
-
-            # Output Format
-
-            Responde a las preguntas del usuario de forma clara y específica, asegurando adherirse a las instrucciones proporcionadas.
-          .
-          `
-
-          const conversationMessages = conversation.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          }));
-          responseMessage = await getChatGPTResponse([
-            ...conversationMessages,
-            { role: "user", content: message },
-            { role: "system", content: verificationPrompt },
-          ]);
-          await sendMessage(responseMessage, phoneNumber);
-          conversation.push({role: "user", content: message});
-          conversation.push({role: "assistant", content: responseMessage});
-          await user.save();
-        } else {
-          console.log("Advertencia: No se pudo determinar el tipo de cliente o procesar el mensaje");
-        }
-      } else if (responseMessage && responseMessage.toLowerCase() === "no_determinado") {
-        console.log("Tipo de cliente no determinado, procesando mensaje general");
-        const conversationMessages = conversation.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        }));
-        responseMessage = await getChatGPTResponse([
-          ...conversationMessages,
-          { role: "user", content: Body }
-        ]);
-
-        console.log(`Respuesta de ChatGPT para mensaje general:`, responseMessage);
-        if (responseMessage) {
-          await sendMessage(responseMessage, phoneNumber);
-          console.log(`Mensaje general enviado al usuario`);
-          conversation.push({role: "user", content: message});
-          conversation.push({role: "assistant", content: responseMessage});
-          await user.save();
-        } else {
-          console.log("Advertencia: responseMessage es undefined para mensaje general");
-        }
-      } else {
-        console.log("Advertencia: No se pudo determinar el tipo de cliente o procesar el mensaje");
+        console.error("Error en el proceso de pago:", error);
       }
-
       res.status(200).send("Mensaje procesado");
       console.log(`Respuesta enviada al servidor de Twilio`);
     }
@@ -395,6 +196,8 @@ router.post("/", async (req, res) => {
 });
 
 module.exports = router;
+
+
 
 
 // Función para transcribir el audio
@@ -435,8 +238,7 @@ async function transcribeAudio(audioUrl) {
     return 'Error al transcribir el audio';
   }
 }
-
-
+/*
 function isBusinessDataComplete(businessData) {
   return businessData && 
          businessData.name && 
@@ -497,4 +299,4 @@ async function getMissingDataPrompt(businessData, conversation) {
     console.error("Error al generar el mensaje para datos faltantes:", error);
     return `Por favor, proporciona los siguientes datos faltantes: ${missingFieldsString}.`;
   }
-}
+}*/
