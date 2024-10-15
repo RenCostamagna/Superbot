@@ -5,15 +5,15 @@ const express = require("express");
 //const { sendNewBusinessRegistrationEmail } = require("../controllers/businessRegistrationController.js");
 //const handleOrder = require('../controllers/handleOrder');
 //Cuando se termine de implementar el envio, descomentar los siguientes imports
-//const handleDeliveryDetails = require("../controllers/handleDeliberyDetails.js");
 
-const handleHomeDelivery = require("../controllers/handleHomeDelivery.js");
+const handleEnding = require("../controllers/handleEnding.js");
 const handleConfirmOrModify = require("../controllers/handleConfirmOrModify");
 const handleCancel = require("../controllers/handleCancel.js");
 const welcomeFLow = require("../controllers/handlerWelcome.js");
 const handlePayment = require("../controllers/handlePayment.js");
 const clearUserCache = require("../config/clearCache.js");
 const handleProductsList = require('../controllers/handlePrductsList.js');
+const { handleConfirmation } = require("../controllers/handleConfirmation.js");
 
 require("dotenv").config();
 
@@ -44,6 +44,12 @@ const systemPrompt = `
 - Solo incluye productos disponibles en el inventario (inventoryTable).
 - Verifica que la cantidad en stock sea suficiente para cubrir la solicitud del cliente.
 - Cuando se realizan preguntas muy generales sobre productos, hace una subpregunta para obtener más información.
+- Si la persona hace alguna pregunta tecnica sobre algun producto, responde de manera clara y simple.
+
+**Farmacos**
+- Si la persona solicita un farmaco, preguntale si tiene regencia veterinaria, si no la tiene, aclarale que no puede comprarlo. 
+- Se muy estricto con esta regla, y si no se cumple, no se puede agregar ese articulo al pedido.
+- En caso de que la persona sea un consumidor final, puede comprar los farmacos sin regencia veterinaria.
 
 **Productos No Disponibles**
 - Si un producto está agotado, no lo incluyas en la lista.
@@ -52,12 +58,12 @@ const systemPrompt = `
 
 **Especificaciones de Productos**
 - Sé específico al referirte a los productos (tipo de alimento, medicamento, accesorios, etc.).
-- Devuelve todos los productos que tengan relacion con el pedido del cliente, independientemente del rubro.
 
 **Productos con Múltiples Opciones**
 - Si un cliente solicita un producto con varias opciones (ej: "alimento para gatos"), ofrece las opciones disponibles y deja que elija.
 - Si faltan características clave (tamaño, tipo), pregunta antes de enviar la lista.
 - Si hay varios productos de la misma marca, pide aclaraciones.
+- Mostra las opciones que tengas relacion con el pedido del cliente, independientemente del rubro.
 
 **Interacción con el Cliente**
 **Lenguaje y Tono**
@@ -73,18 +79,19 @@ const systemPrompt = `
 
 **Confirmación del Pedido**
 - Cuando se confirme el pedido envia un breve mensaje de agradecimiento y el resumen del pedido y el costo total.
+- Solicitale al cliente que ingrese su CUIT o CUIL para verificar sus datos.
 
 **Cancelación del Pedido**
 - Si el cliente quiere cancelar, pregunta si está seguro.
 
 **Pago**
+- Cuando la persona haya proporcionado su CUIT o CUIL, si el cuit existe en el sistema, pregunta si desea pagar con mercado pago o con otro medio de pago.
 - Informa que el pago se realiza solo a través de Mercado Pago.
 - No preguntes sobre medios de pago ni envíes links.
 
 **Notas Adicionales**
 - CPC significa: Carne, pollo y cereales.
 - Si piden el producto más barato o más caro, asegúrate de que lo sea.
-- Si el cliente es un negocio, no le des la opción de realizar un pedido, ya que no puede realizarlo sin estar registrado ni verificados los datos del negocio.
 - Si alguna persona pregunta acerca de algun empleado, indicale que sos un bot y que no tenes informacion sobre los empleados.
 `;
 
@@ -142,7 +149,7 @@ router.post("/", async (req, res) => {
       
         console.log(`Usuario actualizado a consumidor final:`, user);
 
-        if (user.stage !== "payment" && user.stage !== "ending" && user.stage !== "confirmation") {
+        if (user.stage !== "payment") {
           console.log(`Etapa actual del usuario: ${user.stage}`);
           // Redirigir a la función correspondiente según el estado del usuario
           switch (user.stage) {
@@ -155,13 +162,11 @@ router.post("/", async (req, res) => {
             case "cancel":
               await handleCancel(user, phoneNumber, message);
               break;
-            // Esperando a la api del berna de usuarios
-            // Cuando se termine de implementar el envio, descomentar el caso de "delivery_details"
-            /*case "delivery_details":
-              await handleDeliveryDetails(user, phoneNumber, Body);
-              break;*/
-            case "home_delivery":
-              await handleHomeDelivery(user, phoneNumber, Body);
+            case "ending":
+              await handleEnding(user, phoneNumber, message);
+              break;
+            case "confirmation":
+              await handleConfirmation(user, phoneNumber, message);
               break;
             default:
               // Si el estado no es reconocido
@@ -172,17 +177,13 @@ router.post("/", async (req, res) => {
               });
           
           }
-          console.log(user.paymentStatus);
-        }
-        try {
-          if (user.stage === "payment") {
+        console.log(user.paymentStatus);
+      }
+      try {
+        if (user.stage === "payment") {
             await handlePayment(phoneNumber, message);
-            // Actualizar el estado del usuario a 'ending'
-            await user.save();
-          } else if (user.stage === "confirmation") {
-            await handleConfirmation(user, phoneNumber, Body);
-          }
-        } catch (error) {
+        }
+      } catch (error) {   
         console.error("Error en el proceso de pago:", error);
       }
       res.status(200).send("Mensaje procesado");
@@ -238,65 +239,3 @@ async function transcribeAudio(audioUrl) {
     return 'Error al transcribir el audio';
   }
 }
-/*
-function isBusinessDataComplete(businessData) {
-  return businessData && 
-         businessData.name && 
-         businessData.name !== 'Por favor' && // Agregar esta condición
-         businessData.cuit && 
-         businessData.cuit !== 'proporcioname los datos de tu negocio: nombre' && // Agregar esta condición
-         businessData.address &&
-         businessData.address !== 'cuit y dirección.'; // Agregar esta condición
-}
-
-function extractBusinessData(message) {
-  const parts = message.split(',').map(part => part.trim());
-  if (parts.length >= 3) {
-    return {
-      name: parts[0],
-      cuit: parts[1],
-      address: parts.slice(2).join(', '),
-    };
-  }
-  return null;
-}
-
-async function getMissingDataPrompt(businessData, conversation) {
-  const missingFields = [];
-  if (!businessData.name) missingFields.push("nombre del negocio");
-  if (!businessData.cuit) missingFields.push("CUIT");
-  if (!businessData.address) missingFields.push("dirección");
-
-  const missingFieldsString = missingFields.join(", ");
-
-  const prompt = `
-  Eres un asistente amable que ayuda a registrar negocios. 
-  Necesitas solicitar los siguientes datos faltantes del negocio: ${missingFieldsString}.
-  
-  Por favor, genera un mensaje amable y profesional en español para solicitar esta información.
-  El mensaje debe:
-  1. Agradecer por la información proporcionada hasta ahora
-  2. Explicar qué datos faltan.
-  3. Solicitar los datos faltantes de manera clara y concisa
-  4. Ofrecer ayuda si tienen alguna duda
-
-  No incluyas comillas en tu respuesta.
-  `;
-
-  const conversationMessages = conversation.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-  }));
-
-  try {
-    const response = await getChatGPTResponse([
-      ...conversationMessages,
-      { role: "system", content: prompt },
-    ]);
-
-    return response;
-  } catch (error) {
-    console.error("Error al generar el mensaje para datos faltantes:", error);
-    return `Por favor, proporciona los siguientes datos faltantes: ${missingFieldsString}.`;
-  }
-}*/

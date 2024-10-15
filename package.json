@@ -24,6 +24,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.9.15",
     "openai": "^4.58.2",
+    "soap": "^1.1.5",
     "twilio": "^5.3.0"
   }
 }
