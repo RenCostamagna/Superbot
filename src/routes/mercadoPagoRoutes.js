@@ -92,7 +92,7 @@ router.post("/mercadopago-webhook", async (req, res) => {
                 );
 
                 // Enviar correo de notificación a la empresa
-                await sendNewOrderEmail(user, user.lastOrderToLink);
+                await sendNewOrderEmail(user, user.lastOrderToLink, status);
 
                 // Responder que la petición fue procesada correctamente
                 return res.sendStatus(200);

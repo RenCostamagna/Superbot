@@ -20,7 +20,7 @@ async function clearUserCache(phoneNumber) {
         }
         user.conversation = [];
         user.stage = 'welcome'; 
-        user.typeOfClient = null,
+        user.status = null,
         user.cuit = null,
         user.lastOrderToLink = {    
             items: [],

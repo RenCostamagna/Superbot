@@ -7,6 +7,7 @@ const { getChatGPTResponse } = require("../config/openaiClient.js");
 const User = require("../models/User");
 require('dotenv').config();
 const { sendMessage } = require('../utils/twilioHelper');
+const { sendNewOrderEmail } = require("./businessRegistrationController.js");
 
 const mapPrompt = `
   En base a la lista de pedido que tienes, de productos con sus cantidades y precios, y al final, en la última línea, el total. Quiero que la transformes en el siguiente formato:
@@ -137,6 +138,13 @@ const handlePayment = async (phoneNumber, Body) => {
   };
 
   await user.save();
+  
+  if (user.status === "registrado" || user.status === "no_registrado") {
+    await sendNewOrderEmail(user, user.lastOrderToLink, "Pendiente: paga con otro medio de pago");
+    user.stage = 'ending';
+    await user.save();
+    return;
+  }
 
   const userId = user._id;
   console.log("userId:", userId);

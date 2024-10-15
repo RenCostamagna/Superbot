@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const sendNewBusinessRegistrationEmail = async (businessData) => {
+const sendNewBusinessRegistrationEmail = async (cuit) => {
   let transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
@@ -12,21 +12,18 @@ const sendNewBusinessRegistrationEmail = async (businessData) => {
     },
   });
 
-  let businessDetails = `
-    Nombre del negocio: ${businessData.name || 'No proporcionado'}
-    CUIT: ${businessData.cuit || 'No proporcionado'}
-    Dirección: ${businessData.address || 'No proporcionada'}
-    Teléfono: ${businessData.phone || 'No proporcionado'}
+  let formattedCuit = `
+    CUIT/CUIL: ${cuit || 'No proporcionado'}
   `;
 
   let mailOptions = {
-    from: '"Sistema de Registro de Negocios" <noreply@tuempresa.com>',
+    from: '"Sistema de Registro de Clientes" <noreply@tuempresa.com>',
     to: process.env.COMPANY_EMAIL,
-    subject: "Nuevo negocio solicitando registro",
+    subject: "Nuevo cliente solicitando registro",
     text: `
-      Se ha recibido una nueva solicitud de registro de negocio:
+      Se ha recibido una nueva solicitud de registro de cliente, verifica si es un consumidor final o un negocio con su cuit/cuil en AFIP:
 
-      ${businessDetails}
+      ${formattedCuit}
 
       Por favor, revisa esta información y procesa la solicitud lo antes posible.
     `,
@@ -43,7 +40,7 @@ const sendNewBusinessRegistrationEmail = async (businessData) => {
 
 
 // Función para enviar el correo de notificación de nuevo pedido
-const sendNewOrderEmail = async (user, order) => {
+const sendNewOrderEmail = async (user, order, estado) => {
     let transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
@@ -75,8 +72,11 @@ const sendNewOrderEmail = async (user, order) => {
         ${productList}
   
         Total: $${order.total}
-  
+
+        Estado del pago: ${estado}
+        Estado del cliente: ${user.status}
         Por favor, procesa este pedido lo antes posible.
+
       `,
     };
   

@@ -20,6 +20,9 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
       - Si el mensaje menciona explícitamente la palabra 'cancelar', responde con 'cancelar'.
       - Si el mensaje no es una confirmación, una modificación, una cancelación o una pregunta sobre cómo realizar modificaciones, responde con 'no_confirmar'.
       - Tene en cuenta el contexto de la conversación para hacer una clasificación precisa, ya que el usuario puede responder preguntas anteriores.
+      - La persona responde "si", a preguntas de tipo: "Queres agregar algo mas?" o "Queres agregarlo a tu pedido?" responde con 'modificar'.
+      - La confirmacion tiene que ser lo mas clara posible. 
+      - Si el mensaje contiene el cuit/cuil, tomalo como confirmacion y responde con 'confirmar'.
 
       **Ejemplos de confirmación del pedido:**
       - Mensaje anterior: "Queres confirmar el pedido?", Mensaje: "Si dale"
@@ -27,13 +30,6 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
       - "Sí, así está bien"
       - "Confirmo"
       - "Confirmar"
-      - "Nombre y apellido"
-      - "DNI"
-      - "Dirección"
-      - "Día y horario"
-      - "Nombre y apellido, DNI, dirección y día y horario"
-      - "DNI, dirección y día y horario"
-      - "Mi nombre es Juan Pérez, DNI 12345678, vivo en Calle Falsa 123 y puedo recibir el pedido el lunes a las 10 AM."
 
       **Ejemplos de modificar:**
       - "Quisiera cambiar el producto a otro modelo."
@@ -104,7 +100,7 @@ async function manejarConfirmacion(user, phoneNumber, Body, conversation) {
       { role: "user", content: Body },
       { role: "assistant", content: responseMessage }
     );
-    user.stage = 'confirmation'; // Cuando se termine de implementar el envio, cambiar a 'delivery_details'
+    user.stage = 'confirmation'; 
     await user.save();
     await sendMessage(responseMessage, phoneNumber);
     

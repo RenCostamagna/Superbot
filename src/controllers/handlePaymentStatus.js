@@ -1,5 +1,3 @@
-//const Shipping = require("../models/shipping.js");
-//const updateStock = require('../config/updateStock.js');
 const User = require("../models/User.js");
 const { getChatGPTResponse } = require("../config/openaiClient.js");
 const { sendMessage } = require('../utils/twilioHelper');
@@ -13,21 +11,8 @@ const handlePaymentStatus = async (status, phoneNumber) => {
     return;
   }
 
-  /*const shipping = await Shipping.findOne({
-    phoneNumber: phoneNumber,
-    estado: deliveryStatus,
-  });
-
-  if (!shipping) {
-    console.error(`No se encontró información de envío para el usuario con el número de teléfono: ${phoneNumber} y estado de entrega: ${deliveryStatus}`);
-    return;
-  }*/
-
-  //const diaYHoraEntrega = shipping.diaYHoraEntrega || "No especificado"; // Asegúrate de que no sea null
   const conversation = user.conversation;
 
-  //console.log(shipping);
-  // Determinar el mensaje basado en el estado del pago
   switch (status) {
     case "approved":
       responseMessage = `El pago del usuario se acreditó. Genera un mensaje para esto. No agregues un saludo. Y recordale los horarios de atención en los que puede retirar su pedido.`;
@@ -55,7 +40,7 @@ const handlePaymentStatus = async (status, phoneNumber) => {
             console.log(`Payment Status: ${user.lastOrderToLink.paymentStatus}`);
             //await updateStock(user._id);
             // Cambiar el estado del usuario
-            user.stage = "home_delivery";
+            user.stage = "ending";
             user.lastOrderToLink.paymentStatus = "accredited";
             await user.save();
           }
