@@ -4,7 +4,7 @@ const Client = require('../models/clients'); // Asegúrate de que la ruta es cor
 const {getChatGPTResponse} = require('../config/openaiClient');
 
 // Asegúrate de que la variable de entorno esté definida o usa una cadena directamente
-const mongoDB = 'mongodb+srv://rencostamagna:WbUWGDtwQfUYj5A2@renzocluster.2upya.mongodb.net/Balros?retryWrites=true&w=majority&appName=RenzoCluster' ;
+const mongoDB = '' ;
 
 mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Conexión exitosa a MongoDB'))
