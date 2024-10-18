@@ -32,7 +32,7 @@ async function welcomeFlow(user, phoneNumber, Body) {
   const conversationMessages = conversation.map((msg) => ({
     role: msg.role,
     content: msg.content,
-  }));
+  })).filter((msg) => msg.role !== "system");
 
   // Obtiene la respuesta de OpenAI
   let openAIResponse = await getChatGPTResponse([

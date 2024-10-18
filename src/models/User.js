@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   stage: String,
   status: String,
   cuit: String,
-
+  paymentMethodAsked: Boolean,
   lastOrderToLink: {
     items: [
       {

@@ -139,7 +139,7 @@ const handlePayment = async (phoneNumber, Body) => {
 
   await user.save();
   
-  if (user.status === "registrado" || user.status === "no_registrado") {
+  if (user.status === "registrado" || user.status === "no_registrado" || user.status === "registrado_y_no_paga") {
     await sendNewOrderEmail(user, user.lastOrderToLink, "Pendiente: paga con otro medio de pago");
     user.stage = 'ending';
     await user.save();

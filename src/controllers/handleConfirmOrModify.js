@@ -4,6 +4,9 @@ const { getChatGPTResponse } = require("../config/openaiClient.js");
 
 async function handleConfirmOrModify(user, phoneNumber, Body) {
   try {
+    // Agregar el mensaje del usuario al principio para evitar duplicados
+    user.conversation.push({ role: "user", content: Body });
+    await user.save();
     // Prompt para clasificar la intención del mensaje
     const modifyOrConfirmPrompt = `
       Clasifica la intención de este mensaje en una de las siguientes categorías:
@@ -51,10 +54,10 @@ async function handleConfirmOrModify(user, phoneNumber, Body) {
     const conversationMessagesPrompt = conversation.map((msg) => ({
       role: msg.role,
       content: msg.content,
-    }));
+    })).filter((msg) => msg.role !== "system");
+    
     const responseMessagePrompt = await getChatGPTResponse([
       ...conversationMessagesPrompt,
-      { role: "user", content: Body },
       { role: "system", content: modifyOrConfirmPrompt },
     ]);
 
@@ -91,7 +94,6 @@ async function manejarConfirmacion(user, phoneNumber, Body, conversation) {
     }));
     const responseMessage = await getChatGPTResponse([
       ...conversationMessages,
-      { role: "user", content: Body },
     ]);
     console.log("Respuesta de modificación:", responseMessage);
 
@@ -118,13 +120,11 @@ async function manejarModificacion(user, phoneNumber, Body, conversation) {
     }));
     const responseMessage = await getChatGPTResponse([
       ...conversationMessages,
-      { role: "user", content: Body },
     ]);
     console.log("Respuesta de modificación:", responseMessage);
 
     // Actualizar la conversación y el estado del usuario
     conversation.push(
-      { role: "user", content: Body },
       { role: "assistant", content: responseMessage }
     );
     user.stage = 'confirm_or_modify';
@@ -145,11 +145,8 @@ async function manejarCancelacion(user, phoneNumber, Body, conversation) {
     }));
     const responseMessage = await getChatGPTResponse([
       ...conversationMessages,
-      { role: "user", content: Body },
     ]);
     console.log("Respuesta a cancelación:", responseMessage);
-
-    conversation.push({ role: "user", content: Body });
 
     try {
       await sendMessage(responseMessage, phoneNumber);
@@ -176,11 +173,8 @@ async function manejarNoConfirmar(user, phoneNumber, Body, conversation) {
     }));
     const responseMessage = await getChatGPTResponse([
       ...conversationMessages,
-      { role: "user", content: Body },
     ]);
     console.log("Respuesta a no_confirmar:", responseMessage);
-
-    conversation.push({ role: "user", content: Body });
 
     try {
       await sendMessage(responseMessage, phoneNumber);

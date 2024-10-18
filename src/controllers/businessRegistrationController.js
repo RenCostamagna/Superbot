@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const sendNewBusinessRegistrationEmail = async (cuit) => {
+const sendNewBusinessRegistrationEmail = async (cuit, phoneNumber) => {
   let transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
@@ -24,6 +24,7 @@ const sendNewBusinessRegistrationEmail = async (cuit) => {
       Se ha recibido una nueva solicitud de registro de cliente, verifica si es un consumidor final o un negocio con su cuit/cuil en AFIP:
 
       ${formattedCuit}
+      Teléfono: ${phoneNumber}
 
       Por favor, revisa esta información y procesa la solicitud lo antes posible.
     `,

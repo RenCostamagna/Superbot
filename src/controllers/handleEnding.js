@@ -10,10 +10,11 @@ try {
   const promptIntencionPedido = `Es el paso final del programa, verifica si el usuario quiere realizar alguna prgunta o no.
   Si quiere realizar alguna pregunta, responde con "pregunta", caso contrario responde con "completado".`;
 
+  const conversation = user.conversation;
   const conversationMessages = conversation.map((msg) => ({
     role: msg.role,
     content: msg.content,
-  }));
+  })).filter((msg) => msg.role !== "system");
 
   let responseMessage = await getChatGPTResponse([
     ...conversationMessages,
