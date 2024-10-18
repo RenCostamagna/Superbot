@@ -42,7 +42,7 @@ const createPaymentLink = async (order, userId) => {
   try {
     const payment = new Preference(client);
     const result = await payment.create({ body });
-    const link = result.sandbox_init_point;
+    const link = result.init_point;
     if (link) {
       console.log("Link de pago generado:", link);
       return link;
