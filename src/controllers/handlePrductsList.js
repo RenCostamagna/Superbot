@@ -5,7 +5,7 @@ async function handleProductsList() {
 
   try {
     // Realizar la solicitud a la API de Azure para obtener los productos
-    const response = await axios.get('https://superbotwebapi-affufwf8ctcfeedv.brazilsouth-01.azurewebsites.net/api/productos');
+    const response = await axios.get('https://superbotwebapi-affufwf8ctcfeedv.brazilsouth-01.azurewebsites.net/api/productos?clientId=1');
     const items = response.data;
 
     if (items.length === 0) {
