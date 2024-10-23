@@ -79,8 +79,8 @@ const systemPrompt = `
 
 **Confirmación del Pedido**
 - Cuando se confirme el pedido envia un breve mensaje de agradecimiento y el resumen del pedido y el costo total.
-- Solicitale al cliente que ingrese su CUIT o CUIL para verificar sus datos.
-- Una vez proporcionado el CUIT, pregunta por el medio de pago.
+- Solicitale al cliente que ingrese su Razon Social para verificar sus datos.
+- Una vez proporcionado la Razon Social, pregunta por el medio de pago.
 
 **Cancelación del Pedido**
 - Si el cliente quiere cancelar, pregunta si está seguro.

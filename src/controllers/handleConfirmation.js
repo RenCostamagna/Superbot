@@ -1,11 +1,13 @@
 const { getChatGPTResponse } = require("../config/openaiClient.js");
 const { sendMessage } = require("../utils/twilioHelper.js");
 const { sendNewBusinessRegistrationEmail } = require("./businessRegistrationController.js");
+const axios = require('axios');
+
 
 const db = require('../models/clients');
 
 const cuitPrompt = `Extrae del mensaje el CUIT o CUIL del cliente y responde solo con esa informacion. No propones ninguna opcion, solo extraes la informacion. Si el mensaje no contiene CUIT o CUIL, responde con "no esta". Responde exactamente eso sin dar informacion adicional.`;             
-const noCuitPrompt = `El cliente no ingreso su CUIT o CUIL. Envia un mensaje al usuario informandole que ingrese su CUIT o CUIL.`;
+const noCuitPrompt = `El cliente no ingreso su Razon Social. Envia un mensaje al usuario informandole que ingrese su Razon Social.`;
 
 async function handleConfirmation(user, phoneNumber, Body) {
   try {
@@ -131,17 +133,35 @@ module.exports = { handleConfirmation };
 // Simulación de la función para verificar el CUIT en la API
 async function isCUITRegistered(phoneNumber) {
   try {
-    // Extraer el número de teléfono limpio eliminando 'whatsapp:' y los primeros 6 dígitos después del '+'
+    // Limpia el número de teléfono del WhatsApp
     const cleanPhoneNumber = phoneNumber.replace(/whatsapp:\+\d{6}/, '');
     console.log("cleanPhoneNumber", cleanPhoneNumber);
-    // Búsqueda en MongoDB usando regex para coincidencia flexible
-    const regex = new RegExp(`^${cleanPhoneNumber}$`); // Asegura coincidencia exacta con el número limpio
-    const result = await db.findOne({ Teléfonos: regex });
-    console.log("result", result);
-    return result !== null; // Devuelve true si se encontró el documento
+    
+    // Obtiene la lista de clientes de la API
+    const response = await axios.get(`https://superbotwebapi-affufwf8ctcfeedv.brazilsouth-01.azurewebsites.net/api/clientes?clientId=1`);
+
+    const clients = response.data;
+    
+    // Limpia el número de teléfono para la búsqueda (solo dígitos)
+    const searchNumber = cleanPhoneNumber.replace(/\D/g, '');
+    
+    // Busca si algún cliente tiene el número de teléfono
+    const clientFound = clients.some(client => {
+      // Limpia los números de teléfono del cliente (solo dígitos)
+      const clientPhones = client.telefonos
+        .split('/')
+        .map(phone => phone.trim().replace(/\D/g, ''));
+      
+      // Verifica si alguno de los números del cliente coincide
+      return clientPhones.some(phone => phone.includes(searchNumber));
+    });
+
+    console.log("Cliente encontrado:", clientFound);
+    return clientFound;
+    
   } catch (error) {
-    console.error("Error al verificar Telefono:", error);
-    throw error; // Re-lanzar el error si es necesario o manejarlo adecuadamente
+    console.error("Error al verificar teléfono en API:", error);
+    throw error;
   }
 }
 
