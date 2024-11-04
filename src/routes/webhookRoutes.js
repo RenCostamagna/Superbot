@@ -172,6 +172,13 @@ Balanceados Medicados
 
 **Terminologias**
 En este item tenes algunas referencias y definiciones de productos para que puedas entender mejor la solicitud del cliente.
+- Antiparacitario Externos Simparica: comprimido, bocadito de carne, pastilla, pulgas, garrapatas, perros, parasitos externos, pulguicida, garrapaticida, mensual, caninos.
+- Antiparacitario Externos PROTECH: pipeta, pulgas, garrapatas, externo, perros, parasitos externos, pulguicida, garrapaticida, mensual, Spot On, caninos.
+- Antiparacitario Externos Block Spino: comprimido, bocadito de carne, pastilla, pulgas, perros, gatos, parasitos externos, pulguicida, mensual, felinos, caninos.
+- Antiparacitario Externos Power Gold, POWER, Bravecto : comprimido, bocadito de carne, pastilla, pulgas, garrapatas, perros, parasitos externos, pulguicida, garrapaticida, tres meses, 180 días, caninos.
+- Antiparacitario Nexxgard: comprimido, bocadito de carne, pastilla, pulgas, garrapatas, perros, cachorros, parasitos externos, pulguicida, garrapaticida, mensual, caninos.
+- Antiparacitario Externos FipronPET: pipeta, pulgas, garrapatas, externo, perros, parasitos externos, pulguicida, garrapaticida, mensual, Spot On, caninos.
+- Antiparacitario Externo PiPipeta Osspret: Spot On, pipeta, pulgas, garrapatas, externo, perros, parasitos externos, pulguicida, garrapaticida, mensual, caninos.
 - Sobrecitos: AB Humedos Mars Petcare
 - Puch: AB Humedos Mars Petcare
 - Caja de Pouch: AB Humedos Mars Petcare
